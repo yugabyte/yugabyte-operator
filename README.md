@@ -1,1 +1,1 @@
-# yugabyte-k8s-operator
+# Yugabyte Kubernetes Operator
