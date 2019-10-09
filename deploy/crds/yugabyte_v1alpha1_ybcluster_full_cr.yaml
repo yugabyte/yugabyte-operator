@@ -1,0 +1,56 @@
+apiVersion: yugabyte.com/v1alpha1
+kind: YBCluster
+metadata:
+  name: example-ybcluster
+  namespace: yb-operator
+spec:
+  image:
+    repository: yugabytedb/yugabyte
+    tag: 1.3.2.0-b19
+    pullPolicy: IfNotPresent
+  tls:
+    enabled: false
+  replicationFactor: 3
+  master:
+    replicas: 3
+    masterUIPort: 7001
+    masterRPCPort: 7101
+    enableLoadBalancer: true
+    podManagementPolicy: Parallel
+    storage:
+      count: 1
+      size: 1Gi
+      storageClass: standard
+    resources:
+      requests:
+        cpu: 0.2
+        memory: 256Mi
+      limits:
+        cpu: 0.5
+        memory: 512Mi
+    gflags:
+      - key: default_memory_limit_to_ram_ratio
+        value: "0.85"
+  tserver:
+    replicas: 3
+    tserverUIPort: 9001
+    tserverRPCPort: 9101
+    ycqlPort: 9042
+    yedisPort: 6379
+    ysqlPort: 5433
+    enableLoadBalancer: true
+    podManagementPolicy: Parallel
+    storage:
+      count: 1
+      size: 1Gi
+      storageClass: standard
+    resources:
+      requests:
+        cpu: 0.2
+        memory: 256Mi
+      limits:
+        cpu: 0.5
+        memory: 512Mi
+    gflags:
+      - key: default_memory_limit_to_ram_ratio
+        value: "0.85"
