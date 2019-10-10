@@ -104,7 +104,7 @@ spec:
       containers:
         - name: yugabyte-k8s-operator
           # Replace this with the built image name
-          image: REPLACE_IMAGE
+          image: quay.io/yugabyte/yugabytedb-operator
           command:
             - yugabyte-k8s-operator
           imagePullPolicy: Always

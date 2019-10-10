@@ -2,7 +2,6 @@ module github.com/yugabyte/yugabyte-k8s-operator
 
 require (
 	github.com/Masterminds/sprig v0.0.0-20190301161902-9f8fceff796f
-	github.com/NYTimes/gziphandler v1.0.1 // indirect
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f
 	github.com/go-ini/ini v1.46.0 // indirect
 	github.com/go-logr/logr v0.1.0
@@ -39,3 +38,5 @@ replace (
 )
 
 replace github.com/operator-framework/operator-sdk => github.com/operator-framework/operator-sdk v0.10.0
+
+go 1.13
