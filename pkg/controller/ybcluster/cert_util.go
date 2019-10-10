@@ -111,7 +111,7 @@ func getCertTemplate(cn string, alternateDNS []string, daysValid int) (*x509.Cer
 		},
 		IPAddresses: []net.IP{},
 		DNSNames:    alternateDNS,
-		NotBefore:   time.Now(),
+		NotBefore:   time.Now().AddDate(0, 0, -1),
 		NotAfter:    time.Now().Add(time.Hour * 24 * time.Duration(daysValid)),
 		KeyUsage:    x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage: []x509.ExtKeyUsage{
