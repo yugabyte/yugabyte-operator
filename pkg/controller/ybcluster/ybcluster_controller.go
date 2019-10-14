@@ -740,14 +740,14 @@ func createMasterContainerCommand(namespace string, grpcPort, replicas, replicat
 	command := []string{
 		"/home/yugabyte/bin/yb-master",
 		fmt.Sprintf("--fs_data_dirs=%s", createListOfVolumeMountPaths(storageCount)),
-		// fmt.Sprintf("--rpc_bind_addresses=$(POD_IP):%d", grpcPort),
 		fmt.Sprintf("--rpc_bind_addresses=$(POD_NAME).%s.%s.svc.cluster.local:%d", serviceName, namespace, grpcPort),
 		fmt.Sprintf("--server_broadcast_addresses=$(POD_NAME).%s.%s.svc.cluster.local:%d", serviceName, namespace, grpcPort),
-		"--use_private_ip=never",
 		fmt.Sprintf("--master_addresses=%s", getMasterAddresses(namespace, grpcPort, replicas)),
 		"--use_initial_sys_catalog_snapshot=true",
+		"--metric_node_name=$(POD_NAME)",
 		fmt.Sprintf("--replication_factor=%d", replicationFactor),
-		fmt.Sprintf("--master_replication_factor=%d", replicas),
+		"--dump_certificate_entries",
+		"--stderrthreshold=0",
 		"--logtostderr",
 	}
 
@@ -779,14 +779,14 @@ func createTServerContainerCommand(namespace string, masterGRPCPort, tserverGRPC
 	command := []string{
 		"/home/yugabyte/bin/yb-tserver",
 		fmt.Sprintf("--fs_data_dirs=%s", createListOfVolumeMountPaths(storageCount)),
-		// fmt.Sprintf("--rpc_bind_addresses=$(POD_IP):%d", tserverGRPCPort),
 		fmt.Sprintf("--rpc_bind_addresses=$(POD_NAME).%s.%s.svc.cluster.local:%d", serviceName, namespace, tserverGRPCPort),
 		fmt.Sprintf("--server_broadcast_addresses=$(POD_NAME).%s.%s.svc.cluster.local:%d", serviceName, namespace, tserverGRPCPort),
 		"--start_pgsql_proxy",
 		fmt.Sprintf("--pgsql_proxy_bind_address=$(POD_IP):%d", pgsqlPort),
-		"--use_private_ip=never",
 		fmt.Sprintf("--tserver_master_addrs=%s", getMasterAddresses(namespace, masterGRPCPort, masterReplicas)),
-		fmt.Sprintf("--tserver_master_replication_factor=%d", masterReplicas),
+		"--metric_node_name=$(POD_NAME)",
+		"--dump_certificate_entries",
+		"--stderrthreshold=0",
 		"--logtostderr",
 	}
 
