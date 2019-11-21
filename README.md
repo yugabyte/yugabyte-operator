@@ -1,10 +1,10 @@
-# Yugabyte Kubernetes Operator
+# YugabyteDB Kubernetes Operator
 
-Deploy and manage Yugabyte DB cluster as a kubernetes native custom resource viz. `ybclusters.yugabyte.com`.
+Deploy and manage YugabyteDB cluster as a kubernetes native custom resource viz. `ybclusters.yugabyte.com`.
 
-## Deploy a Yugabyte DB cluster with this operator
+## Deploy a YugabyteDB cluster with this operator
 
-To create a Yugabyte DB cluster, first we need to setup RBAC for operator & create the operator itself. Run the following command, from root of the repository, to do the same.
+To create a YugabyteDB cluster, first we need to setup RBAC for operator & create the operator itself. Run the following command, from root of the repository, to do the same.
 ```sh
 kubectl create -f deploy/operator.yaml
 ```
@@ -14,12 +14,12 @@ After a few seconds the operator should be up & running. Verify the operator sta
 kubectl -n yb-operator get po,deployment
 ```
 
-Register the custom resource that would represent Yugabyte DB cluster, i.e. `ybclusters.yugabyte.com`.
+Register the custom resource that would represent YugabyteDB cluster, i.e. `ybclusters.yugabyte.com`.
 ```sh
 kubectl create -f deploy/crds/yugabyte_v1alpha1_ybcluster_crd.yaml
 ```
 
-Finally create an instance of the custom resource with which the operator would create a Yugabyte DB cluster.
+Finally create an instance of the custom resource with which the operator would create a YugabyteDB cluster.
 ```sh
 kubectl create -f deploy/crds/yugabyte_v1alpha1_ybcluster_cr.yaml
 ```
@@ -37,7 +37,7 @@ You may choose to start cassandra-compatible ycql api and start storing data in 
 kubectl exec -it yb-tserver-0 /home/yugabyte/bin/cqlsh yb-tserver-0
 ```
 
-You can read more about ysql and ycql apis in [Yugabyte documentation](https://docs.yugabyte.com/latest/api/)
+You can read more about ysql and ycql apis in [YugabyteDB documentation](https://docs.yugabyte.com/latest/api/)
 
 ## Configuration options
 
