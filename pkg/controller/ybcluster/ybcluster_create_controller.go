@@ -240,6 +240,7 @@ func getVolumeClaimTemplates(storageSpec *yugabytev1alpha1.YBStorageSpec) *[]cor
 						corev1.ResourceStorage: resource.MustParse(storageSpec.Size),
 					},
 				},
+				StorageClassName: &storageSpec.StorageClass,
 			},
 		}
 	}
