@@ -1,14 +1,9 @@
 module github.com/yugabyte/yugabyte-k8s-operator
 
 require (
-	github.com/Masterminds/sprig v0.0.0-20190301161902-9f8fceff796f
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f
-	github.com/go-ini/ini v1.46.0 // indirect
-	github.com/go-logr/logr v0.1.0
 	github.com/go-openapi/spec v0.19.0
-	github.com/masterminds/sprig v2.20.0+incompatible
 	github.com/operator-framework/operator-sdk v0.10.1-0.20190912205659-c084b570a6af
-	github.com/rook/rook v1.1.0
 	github.com/spf13/pflag v1.0.3
 	github.com/stretchr/testify v1.3.0
 	k8s.io/api v0.0.0-20190612125737-db0771252981

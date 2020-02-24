@@ -249,7 +249,6 @@ func TestGetVolumeClaimTemplates(t *testing.T) {
 	}
 	addDefaults(&minimalCluster.Spec)
 	result := getVolumeClaimTemplates(&minimalCluster.Spec.Master.Storage)
-	_ = result
 	assert.Equal(t, testStorageClass, *(*result)[0].Spec.StorageClassName)
 }
 
