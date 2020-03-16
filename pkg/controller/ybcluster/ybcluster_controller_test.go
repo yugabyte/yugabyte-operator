@@ -171,7 +171,7 @@ func TestCreateMasterContainerCommand(t *testing.T) {
 		minimalCluster.TLS.Enabled,
 	)
 
-	assert.Equal(t, 10, len(masterCommand))
+	assert.Equal(t, 11, len(masterCommand))
 
 	minimalCluster.Master.Gflags = []ybv1alpha1.YBGFlagSpec{
 		{
@@ -189,7 +189,7 @@ func TestCreateMasterContainerCommand(t *testing.T) {
 		minimalCluster.TLS.Enabled,
 	)
 
-	assert.Equal(t, 11, len(masterCommand))
+	assert.Equal(t, 12, len(masterCommand))
 }
 
 func TestCreateTServerContainerCommand(t *testing.T) {
@@ -207,7 +207,7 @@ func TestCreateTServerContainerCommand(t *testing.T) {
 		minimalCluster.TLS.Enabled,
 	)
 
-	assert.Equal(t, 10, len(tserverCommand))
+	assert.Equal(t, 11, len(tserverCommand))
 
 	minimalCluster.Tserver.Gflags = []ybv1alpha1.YBGFlagSpec{
 		{
@@ -226,7 +226,7 @@ func TestCreateTServerContainerCommand(t *testing.T) {
 		minimalCluster.TLS.Enabled,
 	)
 
-	assert.Equal(t, 11, len(tserverCommand))
+	assert.Equal(t, 12, len(tserverCommand))
 }
 
 func TestCreateListOfVolumeMountPaths(t *testing.T) {
