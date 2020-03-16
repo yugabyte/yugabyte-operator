@@ -136,7 +136,7 @@ func TestUpdateMasterStatefulset(t *testing.T) {
 	updateMasterStatefulset(newCluster, sfs)
 
 	assert.Equal(t, int32(4), *sfs.Spec.Replicas)
-	assert.Equal(t, 11, len(sfs.Spec.Template.Spec.Containers[0].Command))
+	assert.Equal(t, 12, len(sfs.Spec.Template.Spec.Containers[0].Command))
 	assert.Equal(t, int32(1234), sfs.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort)
 	assert.Equal(t, 3, len(sfs.Spec.Template.Spec.Containers[0].VolumeMounts))
 	assert.Equal(t, 3, len(sfs.Spec.VolumeClaimTemplates))
@@ -179,7 +179,7 @@ func TestUpdateTServerStatefulset(t *testing.T) {
 	updateTServerStatefulset(newCluster, sfs)
 
 	assert.Equal(t, int32(5), *sfs.Spec.Replicas)
-	assert.Equal(t, 12, len(sfs.Spec.Template.Spec.Containers[0].Command))
+	assert.Equal(t, 13, len(sfs.Spec.Template.Spec.Containers[0].Command))
 	assert.Equal(t, int32(1234), sfs.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort)
 	assert.Equal(t, int32(2345), sfs.Spec.Template.Spec.Containers[0].Ports[1].ContainerPort)
 	assert.Equal(t, int32(3456), sfs.Spec.Template.Spec.Containers[0].Ports[2].ContainerPort)

@@ -19,6 +19,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+const testStorageClass = "storage-bla"
+
 func TestValidate(t *testing.T) {
 	minimalCluster := getMinimalClusterSpec()
 	fullCluster := getFullClusterSpec()
@@ -68,7 +70,7 @@ func TestAddDefaults(t *testing.T) {
 	assert.NotNil(t, &minimalCluster.Master.Storage.Count)
 	assert.Equal(t, storageCountDefault, minimalCluster.Master.Storage.Count)
 	assert.NotNil(t, &minimalCluster.Master.Storage.StorageClass)
-	assert.Equal(t, storageClassDefault, minimalCluster.Master.Storage.StorageClass)
+	assert.Equal(t, testStorageClass, minimalCluster.Master.Storage.StorageClass)
 
 	// Validate Tserver attributes
 	assert.NotNil(t, &minimalCluster.Tserver)
@@ -93,7 +95,7 @@ func TestAddDefaults(t *testing.T) {
 	assert.Equal(t, storageCountDefault, minimalCluster.Tserver.Storage.Count)
 	assert.NotNil(t, &minimalCluster.Tserver.Storage.Size)
 	assert.NotNil(t, &minimalCluster.Tserver.Storage.StorageClass)
-	assert.Equal(t, storageClassDefault, minimalCluster.Tserver.Storage.StorageClass)
+	assert.Equal(t, testStorageClass, minimalCluster.Tserver.Storage.StorageClass)
 }
 
 func TestCreateAppLabels(t *testing.T) {
@@ -171,7 +173,7 @@ func TestCreateMasterContainerCommand(t *testing.T) {
 		minimalCluster.TLS.Enabled,
 	)
 
-	assert.Equal(t, 10, len(masterCommand))
+	assert.Equal(t, 11, len(masterCommand))
 
 	minimalCluster.Master.Gflags = []ybv1alpha1.YBGFlagSpec{
 		{
@@ -189,7 +191,7 @@ func TestCreateMasterContainerCommand(t *testing.T) {
 		minimalCluster.TLS.Enabled,
 	)
 
-	assert.Equal(t, 11, len(masterCommand))
+	assert.Equal(t, 12, len(masterCommand))
 }
 
 func TestCreateTServerContainerCommand(t *testing.T) {
@@ -207,7 +209,7 @@ func TestCreateTServerContainerCommand(t *testing.T) {
 		minimalCluster.TLS.Enabled,
 	)
 
-	assert.Equal(t, 10, len(tserverCommand))
+	assert.Equal(t, 11, len(tserverCommand))
 
 	minimalCluster.Tserver.Gflags = []ybv1alpha1.YBGFlagSpec{
 		{
@@ -226,13 +228,28 @@ func TestCreateTServerContainerCommand(t *testing.T) {
 		minimalCluster.TLS.Enabled,
 	)
 
-	assert.Equal(t, 11, len(tserverCommand))
+	assert.Equal(t, 12, len(tserverCommand))
 }
 
 func TestCreateListOfVolumeMountPaths(t *testing.T) {
 	expectedVolumeMountPaths := "/mnt/data0,/mnt/data1,/mnt/data2"
 	volumeMountPaths := createListOfVolumeMountPaths(3)
 	assert.Equal(t, expectedVolumeMountPaths, volumeMountPaths)
+}
+
+func TestGetVolumeClaimTemplates(t *testing.T) {
+	name := "test"
+	namespace := "testspace"
+	minimalCluster := &ybv1alpha1.YBCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: *getMinimalClusterSpec(),
+	}
+	addDefaults(&minimalCluster.Spec)
+	result := getVolumeClaimTemplates(&minimalCluster.Spec.Master.Storage)
+	assert.Equal(t, testStorageClass, *(*result)[0].Spec.StorageClassName)
 }
 
 func TestReconcile(t *testing.T) {
@@ -368,13 +385,15 @@ func getMinimalClusterSpec() *ybv1alpha1.YBClusterSpec {
 		Master: ybv1alpha1.YBMasterSpec{
 			Replicas: 3,
 			Storage: ybv1alpha1.YBStorageSpec{
-				Size: "1Gi",
+				Size:         "1Gi",
+				StorageClass: testStorageClass,
 			},
 		},
 		Tserver: ybv1alpha1.YBTServerSpec{
 			Replicas: 3,
 			Storage: ybv1alpha1.YBStorageSpec{
-				Size: "10Gi",
+				Size:         "10Gi",
+				StorageClass: testStorageClass,
 			},
 		},
 	}
@@ -404,7 +423,7 @@ func getFullClusterSpec() *ybv1alpha1.YBClusterSpec {
 			Storage: ybv1alpha1.YBStorageSpec{
 				Count:        1,
 				Size:         "1Gi",
-				StorageClass: storageClassDefault,
+				StorageClass: testStorageClass,
 			},
 			Gflags: []ybv1alpha1.YBGFlagSpec{
 				{
@@ -425,7 +444,7 @@ func getFullClusterSpec() *ybv1alpha1.YBClusterSpec {
 			Storage: ybv1alpha1.YBStorageSpec{
 				Count:        5,
 				Size:         "100Gi",
-				StorageClass: storageClassDefault,
+				StorageClass: testStorageClass,
 			},
 			Gflags: []ybv1alpha1.YBGFlagSpec{
 				{
