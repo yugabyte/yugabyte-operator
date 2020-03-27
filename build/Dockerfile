@@ -1,11 +1,11 @@
 FROM registry.access.redhat.com/ubi7/ubi-minimal:latest
 
-ENV OPERATOR=/usr/local/bin/yugabyte-k8s-operator \
+ENV OPERATOR=/usr/local/bin/yugabyte-operator \
     USER_UID=1001 \
-    USER_NAME=yugabyte-k8s-operator
+    USER_NAME=yugabyte-operator
 
 # install operator binary
-COPY build/_output/bin/yugabyte-k8s-operator ${OPERATOR}
+COPY build/_output/bin/yugabyte-operator ${OPERATOR}
 
 COPY build/bin /usr/local/bin
 RUN  /usr/local/bin/user_setup

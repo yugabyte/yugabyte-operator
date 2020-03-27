@@ -4,7 +4,14 @@ Deploy and manage YugabyteDB cluster as a kubernetes native custom resource viz.
 
 ## Deploy a YugabyteDB cluster with this operator
 
-To create a YugabyteDB cluster, first we need to setup RBAC for operator & create the operator itself. Run the following command, from root of the repository, to do the same.
+To create a YugabyteDB cluster, first we need to register the custom resource that would represent YugabyteDB cluster: `ybclusters.yugabyte.com`.
+
+```sh
+kubectl create -f deploy/crds/yugabyte_v1alpha1_ybcluster_crd.yaml
+```
+
+Setup RBAC for operator and create the operator itself. Run the following command, from root of the repository, to do the same.
+
 ```sh
 kubectl create -f deploy/operator.yaml
 ```
