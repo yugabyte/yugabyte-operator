@@ -1,0 +1,7 @@
+channels:
+- currentCSV: yugabyte-operator.v0.9.0
+  name: alpha
+- currentCSV: yugabyte-operator.v0.9.0
+  name: beta
+defaultChannel: alpha
+packageName: yugabyte-operator

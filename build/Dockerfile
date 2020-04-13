@@ -1,8 +1,19 @@
 FROM registry.access.redhat.com/ubi7/ubi-minimal:latest
+MAINTAINER YugaByte dev-admin-cloud@yugabyte.com
 
 ENV OPERATOR=/usr/local/bin/yugabyte-operator \
     USER_UID=1001 \
     USER_NAME=yugabyte-operator
+
+LABEL name="YugabyteDB" \
+      maintainer="dev-admin-cloud@yugabyte.com" \
+      vendor="Yugabyte Inc" \
+      release="1" \
+      version="0.9.0" \
+      summary="YugabyteDB Operator Image" \
+      description="YugabyteDB Operator Image"
+
+COPY licenses /licenses
 
 # install operator binary
 COPY build/_output/bin/yugabyte-operator ${OPERATOR}

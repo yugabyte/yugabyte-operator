@@ -1,0 +1,15 @@
+scorecard:
+  # Setting a global scorecard option
+  output: json
+  plugins:
+    # `basic` tests configured to test 2 CRs
+    - basic:
+        cr-manifest:
+          - "deploy/crds/yugabyte_v1alpha1_ybcluster_cr.yaml"
+        namespace: "yb-operator"
+    # `olm` tests configured to test 2 CRs
+    - olm:
+        cr-manifest:
+          - "deploy/crds/yugabyte_v1alpha1_ybcluster_cr.yaml"
+        namespace: "yb-operator"
+        csv-path: "deploy/olm-catalog/yugabyte-operator/0.9.0/yugabyte-operator.v0.9.0.clusterserviceversion.yaml"
