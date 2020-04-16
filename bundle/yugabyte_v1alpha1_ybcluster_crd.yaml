@@ -11,8 +11,6 @@ spec:
     plural: ybclusters
   scope: Namespaced
   version: v1alpha1
-  subresources:
-    status: {}
   validation:
     openAPIV3Schema:
       type: object
@@ -226,6 +224,8 @@ spec:
           - tserverReplicas
           type: object
   version: v1alpha1
+  subresources:
+    status: {}
   versions:
   - name: v1alpha1
     served: true
