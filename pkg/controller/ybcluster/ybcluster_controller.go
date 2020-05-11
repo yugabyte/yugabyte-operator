@@ -64,7 +64,7 @@ const (
 	envPodIPVal                 = "status.podIP"
 	envPodName                  = "POD_NAME"
 	envPodNameVal               = "metadata.name"
-	yugabyteDBImageName         = "yugabytedb/yugabyte:2.1.2.0-b10"
+	yugabyteDBImageName         = "yugabytedb/yugabyte:2.3.2.0-b37"
 	imageRepositoryDefault      = "yugabytedb/yugabyte"
 	imageTagDefault             = "2.3.2.0-b37"
 	imagePullPolicyDefault      = corev1.PullIfNotPresent
