@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"github.com/operator-framework/operator-sdk/pkg/status"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -110,6 +111,15 @@ type YBClusterStatus struct {
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 	MasterReplicas  int64 `json:"masterReplicas"`
 	TserverReplicas int64 `json:"tserverReplicas"`
+
+	// TargetedTServerReplicas is the desired number of replicas
+	// currently targeted. If any other operation is going on,
+	// then change in spec.tserver.replicas won't modify this
+	// value until the operation is completed.
+	TargetedTServerReplicas int32 `json:"targetedTServerReplicas"`
+
+	// Conditions represent the latest available observations of an object's state
+	Conditions status.Conditions `json:"conditions,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
