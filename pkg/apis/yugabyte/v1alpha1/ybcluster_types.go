@@ -90,7 +90,7 @@ type YBTServerSpec struct {
 type YBStorageSpec struct {
 	// +kubebuilder:validation:Minimum=1
 	Count int32 `json:"count,omitempty"`
-	// +kubebuilder:validation:Pattern=^[0-9]{1,4}[MGT][IBib]$
+	// +kubebuilder:validation:Pattern=`^[0-9]{1,4}[MGT][IBib]$`
 	Size         string `json:"size,omitempty"`
 	StorageClass string `json:"storageClass,omitempty"`
 }
@@ -117,6 +117,7 @@ type YBClusterStatus struct {
 // YBCluster is the Schema for the ybclusters API
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:path=ybclusters,scope=Namespaced
 type YBCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
