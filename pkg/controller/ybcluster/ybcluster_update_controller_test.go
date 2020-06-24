@@ -162,6 +162,7 @@ func TestUpdateTServerStatefulset(t *testing.T) {
 	newCluster.Spec.Tserver.YedisPort = 4567
 	newCluster.Spec.Tserver.YSQLPort = 5678
 	newCluster.Spec.Tserver.Replicas = 5
+	newCluster.Status.TargetedTServerReplicas = 5
 	newCluster.Spec.Tserver.Storage.Count = 4
 	newCluster.Spec.Tserver.Gflags = []ybv1alpha1.YBGFlagSpec{
 		{
