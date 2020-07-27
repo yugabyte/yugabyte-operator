@@ -26,7 +26,25 @@ Register the custom resource that would represent YugabyteDB cluster, i.e. `ybcl
 kubectl create -f deploy/crds/yugabyte.com_ybclusters_crd.yaml
 ```
 
-Finally create an instance of the custom resource with which the operator would create a YugabyteDB cluster.
+Finally create an instance of the custom resource with which the operator would create a YugabyteDB cluster. The sample manifest has following content,
+```yaml
+apiVersion: yugabyte.com/v1alpha1
+kind: YBCluster
+metadata:
+  name: example-ybcluster
+  namespace: yb-operator
+spec:
+  replicationFactor: 3
+  master:
+    replicas: 3
+    storage:
+      size: 1Gi
+  tserver:
+    replicas: 3
+    storage:
+      count: 1
+      size: 1Gi
+```
 ```sh
 kubectl create -f deploy/crds/yugabyte.com_v1alpha1_ybcluster_cr.yaml
 ```
