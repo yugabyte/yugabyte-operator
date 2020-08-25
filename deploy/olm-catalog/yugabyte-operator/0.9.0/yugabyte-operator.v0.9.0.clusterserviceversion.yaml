@@ -17,7 +17,10 @@ metadata:
               "repository": "yugabytedb/yugabyte",
               "tag": "2.1.2.0-b10"
             },
-            "status": {},
+            "subresources": {
+              "status" : {
+              }
+            },
             "master": {
               "enableLoadBalancer": true,
               "gflags": [
@@ -123,7 +126,7 @@ metadata:
     capabilities: Seamless Upgrades
     categories: "Database"
     description: deploy and manage YugabyteDB clusters using kubernetes CRD ybclusters.yugabyte.com
-    containerImage: registry.connect.redhat.com/yugabytedb/yugabyte-operator:0.9.0-b2
+    containerImage: registry.connect.redhat.com/yugabytedb/yugabyte-operator:0.9.0-b4
     createdAt: 2020-03-31T12:00:00Z
     support: YugabyteDB
     certified: "true"
@@ -369,7 +372,8 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: yugabyte-operator
-                image: registry.connect.redhat.com/yugabytedb/yugabyte-operator:0.9.0-b2
+                image: registry.connect.redhat.com/yugabytedb/yugabyte-operator:0.9.0-b4
+                #image: nchandrappa/yb-operator:0.9.0-b3
                 imagePullPolicy: Always
                 name: yugabyte-operator
                 resources: {}

@@ -172,6 +172,12 @@ func (r *ReconcileYBCluster) Reconcile(request reconcile.Request) (reconcile.Res
 		return reconcile.Result{}, err
 	}
 
+	err = r.client.Status().Update(context.TODO(), cluster)
+	if err != nil {
+		logger.Error(err, "Failed to update pod deploy status")
+		return reconcile.Result{}, err
+	}
+
 	return reconcile.Result{}, nil
 }
 
@@ -503,7 +509,7 @@ func (r *ReconcileYBCluster) reconcileStatefulsets(cluster *yugabytev1alpha1.YBC
 			return err
 		}
 	}
-
+	
 	return nil
 }
 

@@ -1,5 +1,5 @@
 FROM registry.access.redhat.com/ubi7/ubi-minimal:latest
-MAINTAINER YugaByte dev-admin-cloud@yugabyte.com
+MAINTAINER Yugabyte dev-admin-cloud@yugabyte.com
 
 ENV OPERATOR=/usr/local/bin/yugabyte-operator \
     USER_UID=1001 \
