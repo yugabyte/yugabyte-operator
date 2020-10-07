@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"github.com/operator-framework/operator-sdk/pkg/status"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -90,7 +91,7 @@ type YBTServerSpec struct {
 type YBStorageSpec struct {
 	// +kubebuilder:validation:Minimum=1
 	Count int32 `json:"count,omitempty"`
-	// +kubebuilder:validation:Pattern=^[0-9]{1,4}[MGT][IBib]$
+	// +kubebuilder:validation:Pattern=`^[0-9]{1,4}[MGT][IBib]$`
 	Size         string `json:"size,omitempty"`
 	StorageClass string `json:"storageClass,omitempty"`
 }
@@ -110,6 +111,15 @@ type YBClusterStatus struct {
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 	MasterReplicas  int64 `json:"masterReplicas"`
 	TserverReplicas int64 `json:"tserverReplicas"`
+
+	// TargetedTServerReplicas is the desired number of replicas
+	// currently targeted. If any other operation is going on,
+	// then change in spec.tserver.replicas won't modify this
+	// value until the operation is completed.
+	TargetedTServerReplicas int32 `json:"targetedTServerReplicas"`
+
+	// Conditions represent the latest available observations of an object's state
+	Conditions status.Conditions `json:"conditions,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -117,6 +127,7 @@ type YBClusterStatus struct {
 // YBCluster is the Schema for the ybclusters API
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:path=ybclusters,scope=Namespaced
 type YBCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

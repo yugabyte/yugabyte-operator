@@ -7,7 +7,7 @@ Deploy and manage YugabyteDB cluster as a kubernetes native custom resource viz.
 To create a YugabyteDB cluster, first we need to register the custom resource that would represent YugabyteDB cluster: `ybclusters.yugabyte.com`.
 
 ```sh
-kubectl create -f deploy/crds/yugabyte_v1alpha1_ybcluster_crd.yaml
+kubectl create -f deploy/crds/yugabyte.com_ybclusters_crd.yaml
 ```
 
 Setup RBAC for operator and create the operator itself. Run the following command, from root of the repository, to do the same.
@@ -23,12 +23,30 @@ kubectl -n yb-operator get po,deployment
 
 Register the custom resource that would represent YugabyteDB cluster, i.e. `ybclusters.yugabyte.com`.
 ```sh
-kubectl create -f deploy/crds/yugabyte_v1alpha1_ybcluster_crd.yaml
+kubectl create -f deploy/crds/yugabyte.com_ybclusters_crd.yaml
 ```
 
-Finally create an instance of the custom resource with which the operator would create a YugabyteDB cluster.
+Finally create an instance of the custom resource with which the operator would create a YugabyteDB cluster. The sample manifest has following content,
+```yaml
+apiVersion: yugabyte.com/v1alpha1
+kind: YBCluster
+metadata:
+  name: example-ybcluster
+  namespace: yb-operator
+spec:
+  replicationFactor: 3
+  master:
+    replicas: 3
+    storage:
+      size: 1Gi
+  tserver:
+    replicas: 3
+    storage:
+      count: 1
+      size: 1Gi
+```
 ```sh
-kubectl create -f deploy/crds/yugabyte_v1alpha1_ybcluster_cr.yaml
+kubectl create -f deploy/crds/yugabyte.com_v1alpha1_ybcluster_cr.yaml
 ```
 
 Verify that the cluster is up and running with below command. You should see 3 pods each for YB-Master & YB-TServer.

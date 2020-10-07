@@ -12,6 +12,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// ybClusterNamelabel is the label key for cluster name
+	ybClusterNameLabel = "yugabyte.com/ybcluster-name"
+)
+
 func createMasterSecret(cluster *yugabytev1alpha1.YBCluster) (*corev1.Secret, error) {
 	return createSecret(cluster, false)
 }
@@ -196,6 +201,9 @@ func createStatefulSet(cluster *yugabytev1alpha1.YBCluster, isTServerStatefulset
 		volumeClaimTemplates = getVolumeClaimTemplates(&cluster.Spec.Tserver.Storage)
 	}
 
+	podLabels := createAppLabels(label)
+	podLabels[ybClusterNameLabel] = cluster.ObjectMeta.Name
+
 	statefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -207,12 +215,12 @@ func createStatefulSet(cluster *yugabytev1alpha1.YBCluster, isTServerStatefulset
 			PodManagementPolicy: podManagementPolicy,
 			Replicas:            &replicas,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: createAppLabels(label),
+				MatchLabels: podLabels,
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: cluster.Namespace,
-					Labels:    createAppLabels(label),
+					Labels:    podLabels,
 				},
 				Spec: createPodSpec(cluster, isTServerStatefulset, name, serviceName),
 			},

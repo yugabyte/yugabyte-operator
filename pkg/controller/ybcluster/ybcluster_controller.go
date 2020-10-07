@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/coreos/pkg/capnslog"
+	"github.com/operator-framework/operator-sdk/pkg/status"
 	yugabytev1alpha1 "github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -13,11 +14,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -62,7 +66,7 @@ const (
 	envPodNameVal               = "metadata.name"
 	yugabyteDBImageName         = "yugabytedb/yugabyte:2.1.2.0-b10"
 	imageRepositoryDefault      = "yugabytedb/yugabyte"
-	imageTagDefault             = "2.1.2.0-b10"
+	imageTagDefault             = "2.3.2.0-b37"
 	imagePullPolicyDefault      = corev1.PullIfNotPresent
 	podManagementPolicyDefault  = appsv1.ParallelPodManagement
 	storageCountDefault         = int32(1)
@@ -84,7 +88,11 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileYBCluster{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileYBCluster{
+		client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
+		config: mgr.GetConfig(),
+	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -96,16 +104,46 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource YBCluster
-	err = c.Watch(&source.Kind{Type: &yugabytev1alpha1.YBCluster{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &yugabytev1alpha1.YBCluster{}},
+		&handler.EnqueueRequestForObject{},
+		predicate.Funcs{
+			UpdateFunc: func(e event.UpdateEvent) bool {
+				// Ignore updates to CR status in which case metadata.Generation does not change
+				return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
+			},
+		},
+	)
 	if err != nil {
 		return err
 	}
 
-	// TODO(user): Modify this to be the types you create that are owned by the primary resource
-	// Watch for changes to secondary resource Pods and requeue the owner YBCluster
-	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
+	// Watch for changes to secondary resource StatefulSets and requeue the owner YBCluster
+	err = c.Watch(&source.Kind{Type: &appsv1.StatefulSet{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &yugabytev1alpha1.YBCluster{},
+	})
+	if err != nil {
+		return err
+	}
+
+	// Watch for changes to Pods created by secondary resource
+	// StatefulSets and requeue the owner YBCluster
+	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestsFromMapFunc{
+		ToRequests: handler.ToRequestsFunc(func(o handler.MapObject) []reconcile.Request {
+			labels := o.Meta.GetLabels()
+			clusterName, ok := labels[ybClusterNameLabel]
+			if !ok {
+				return nil
+			}
+			return []reconcile.Request{
+				{
+					NamespacedName: types.NamespacedName{
+						Namespace: o.Meta.GetNamespace(),
+						Name:      clusterName,
+					},
+				},
+			}
+		}),
 	})
 	if err != nil {
 		return err
@@ -123,6 +161,7 @@ type ReconcileYBCluster struct {
 	// that reads objects from the cache and writes to the apiserver
 	client client.Client
 	scheme *runtime.Scheme
+	config *rest.Config
 }
 
 // Reconcile reads that state of the cluster for a YBCluster object and makes changes based on the state read
@@ -167,12 +206,22 @@ func (r *ReconcileYBCluster) Reconcile(request reconcile.Request) (reconcile.Res
 		return reconcile.Result{}, err
 	}
 
-	if err = r.reconcileStatefulsets(cluster); err != nil {
-		// Error reconciling statefulsets - requeue the request.
+	result, err := r.reconcileStatefulsets(cluster)
+	if err != nil {
+		return result, err
+	}
+
+	if err := r.syncBlacklist(cluster); err != nil {
+		// Error syncing the blacklist - requeue the request.
 		return reconcile.Result{}, err
 	}
 
-	return reconcile.Result{}, nil
+	if err := r.checkDataMoveProgress(cluster); err != nil {
+		// Error checking data move progress - requeue the request.
+		return reconcile.Result{}, err
+	}
+
+	return result, nil
 }
 
 func (r *ReconcileYBCluster) reconcileSecrets(cluster *yugabytev1alpha1.YBCluster) error {
@@ -439,7 +488,8 @@ func (r *ReconcileYBCluster) reconcileUIServices(cluster *yugabytev1alpha1.YBClu
 	return nil
 }
 
-func (r *ReconcileYBCluster) reconcileStatefulsets(cluster *yugabytev1alpha1.YBCluster) error {
+func (r *ReconcileYBCluster) reconcileStatefulsets(cluster *yugabytev1alpha1.YBCluster) (reconcile.Result, error) {
+	result := reconcile.Result{}
 	// Check if master statefulset already exists
 	found := &appsv1.StatefulSet{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: masterName, Namespace: cluster.Namespace}, found)
@@ -448,26 +498,26 @@ func (r *ReconcileYBCluster) reconcileStatefulsets(cluster *yugabytev1alpha1.YBC
 		if err != nil {
 			// Error creating master statefulset object
 			logger.Errorf("forming master statefulset object failed. err: %+v", err)
-			return err
+			return result, err
 		}
 
 		// Set YBCluster instance as the owner and controller for master statefulset
 		if err := controllerutil.SetControllerReference(cluster, masterStatefulset, r.scheme); err != nil {
-			return err
+			return result, err
 		}
 		logger.Infof("creating a new Statefulset %s for YBMasters in namespace %s", masterStatefulset.Name, masterStatefulset.Namespace)
 		err = r.client.Create(context.TODO(), masterStatefulset)
 		if err != nil {
-			return err
+			return result, err
 		}
 	} else if err != nil {
-		return err
+		return result, err
 	} else {
 		logger.Info("updating master statefulset")
 		updateMasterStatefulset(cluster, found)
 		if err := r.client.Update(context.TODO(), found); err != nil {
 			logger.Errorf("failed to update master statefulset object. err: %+v", err)
-			return err
+			return result, err
 		}
 	}
 
@@ -475,12 +525,12 @@ func (r *ReconcileYBCluster) reconcileStatefulsets(cluster *yugabytev1alpha1.YBC
 	if err != nil {
 		// Error creating tserver statefulset object
 		logger.Errorf("forming tserver statefulset object failed. err: %+v", err)
-		return err
+		return result, err
 	}
 
 	// Set YBCluster instance as the owner and controller for tserver statefulset
 	if err := controllerutil.SetControllerReference(cluster, tserverStatefulset, r.scheme); err != nil {
-		return err
+		return result, err
 	}
 
 	// Check if tserver statefulset already exists
@@ -491,20 +541,51 @@ func (r *ReconcileYBCluster) reconcileStatefulsets(cluster *yugabytev1alpha1.YBC
 
 		err = r.client.Create(context.TODO(), tserverStatefulset)
 		if err != nil {
-			return err
+			return result, err
 		}
 	} else if err != nil {
-		return err
+		return result, err
 	} else {
-		logger.Info("updating tserver statefulset")
-		updateTServerStatefulset(cluster, found)
-		if err := r.client.Update(context.TODO(), found); err != nil {
-			logger.Errorf("failed to update tserver statefulset object. err: %+v", err)
-			return err
+		// Don't requeue if TServer replica count is less than
+		// cluster replication factor
+		if cluster.Spec.Tserver.Replicas < cluster.Spec.ReplicationFactor {
+			logger.Errorf("TServer replica count cannot be less than the replication factor of the cluster: '%d' < '%d'.", cluster.Spec.Tserver.Replicas, cluster.Spec.ReplicationFactor)
+			return result, nil
+		}
+
+		allowStsUpdate, err := r.scaleTServers(*found.Spec.Replicas, cluster)
+		if err != nil {
+			return result, err
+		}
+
+		if allowStsUpdate {
+			logger.Info("updating tserver statefulset")
+			updateTServerStatefulset(cluster, found)
+			if err := r.client.Update(context.TODO(), found); err != nil {
+				logger.Errorf("failed to update tserver statefulset object. err: %+v", err)
+				return result, err
+			}
+
+			// Update the Status after updating the STS
+			tserverScaleCond := status.Condition{
+				Type:    scalingDownTServersCondition,
+				Status:  corev1.ConditionFalse,
+				Reason:  noScaleDownInProgress,
+				Message: noScaleDownInProgressMsg,
+			}
+			logger.Infof("updating Status condition %s: %s", tserverScaleCond.Type, tserverScaleCond.Status)
+			cluster.Status.Conditions.SetCondition(tserverScaleCond)
+			if err := r.client.Status().Update(context.TODO(), cluster); err != nil {
+				return result, err
+			}
+		} else {
+			// Requeue with exponential back-off
+			result.Requeue = true
+			return result, nil
 		}
 	}
 
-	return nil
+	return result, nil
 }
 
 func validateCR(spec *yugabytev1alpha1.YBClusterSpec) error {

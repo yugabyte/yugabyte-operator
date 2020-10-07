@@ -11,16 +11,16 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBCluster":       schema_pkg_apis_yugabyte_v1alpha1_YBCluster(ref),
-		"github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBClusterSpec":   schema_pkg_apis_yugabyte_v1alpha1_YBClusterSpec(ref),
-		"github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBClusterStatus": schema_pkg_apis_yugabyte_v1alpha1_YBClusterStatus(ref),
-		"github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBGFlagSpec":     schema_pkg_apis_yugabyte_v1alpha1_YBGFlagSpec(ref),
-		"github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBImageSpec":     schema_pkg_apis_yugabyte_v1alpha1_YBImageSpec(ref),
-		"github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBMasterSpec":    schema_pkg_apis_yugabyte_v1alpha1_YBMasterSpec(ref),
-		"github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBRootCASpec":    schema_pkg_apis_yugabyte_v1alpha1_YBRootCASpec(ref),
-		"github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBStorageSpec":   schema_pkg_apis_yugabyte_v1alpha1_YBStorageSpec(ref),
-		"github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBTLSSpec":       schema_pkg_apis_yugabyte_v1alpha1_YBTLSSpec(ref),
-		"github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBTServerSpec":   schema_pkg_apis_yugabyte_v1alpha1_YBTServerSpec(ref),
+		"./pkg/apis/yugabyte/v1alpha1.YBCluster":       schema_pkg_apis_yugabyte_v1alpha1_YBCluster(ref),
+		"./pkg/apis/yugabyte/v1alpha1.YBClusterSpec":   schema_pkg_apis_yugabyte_v1alpha1_YBClusterSpec(ref),
+		"./pkg/apis/yugabyte/v1alpha1.YBClusterStatus": schema_pkg_apis_yugabyte_v1alpha1_YBClusterStatus(ref),
+		"./pkg/apis/yugabyte/v1alpha1.YBGFlagSpec":     schema_pkg_apis_yugabyte_v1alpha1_YBGFlagSpec(ref),
+		"./pkg/apis/yugabyte/v1alpha1.YBImageSpec":     schema_pkg_apis_yugabyte_v1alpha1_YBImageSpec(ref),
+		"./pkg/apis/yugabyte/v1alpha1.YBMasterSpec":    schema_pkg_apis_yugabyte_v1alpha1_YBMasterSpec(ref),
+		"./pkg/apis/yugabyte/v1alpha1.YBRootCASpec":    schema_pkg_apis_yugabyte_v1alpha1_YBRootCASpec(ref),
+		"./pkg/apis/yugabyte/v1alpha1.YBStorageSpec":   schema_pkg_apis_yugabyte_v1alpha1_YBStorageSpec(ref),
+		"./pkg/apis/yugabyte/v1alpha1.YBTLSSpec":       schema_pkg_apis_yugabyte_v1alpha1_YBTLSSpec(ref),
+		"./pkg/apis/yugabyte/v1alpha1.YBTServerSpec":   schema_pkg_apis_yugabyte_v1alpha1_YBTServerSpec(ref),
 	}
 }
 
@@ -29,17 +29,18 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBCluster(ref common.ReferenceCallback) c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "YBCluster is the Schema for the ybclusters API",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -51,19 +52,19 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBCluster(ref common.ReferenceCallback) c
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBClusterSpec"),
+							Ref: ref("./pkg/apis/yugabyte/v1alpha1.YBClusterSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBClusterStatus"),
+							Ref: ref("./pkg/apis/yugabyte/v1alpha1.YBClusterStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBClusterSpec", "github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBClusterStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"./pkg/apis/yugabyte/v1alpha1.YBClusterSpec", "./pkg/apis/yugabyte/v1alpha1.YBClusterStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -72,6 +73,7 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBClusterSpec(ref common.ReferenceCallbac
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "YBClusterSpec defines the desired state of YBCluster",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"replicationFactor": {
 						SchemaProps: spec.SchemaProps{
@@ -82,29 +84,29 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBClusterSpec(ref common.ReferenceCallbac
 					},
 					"image": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBImageSpec"),
+							Ref: ref("./pkg/apis/yugabyte/v1alpha1.YBImageSpec"),
 						},
 					},
 					"tls": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBTLSSpec"),
+							Ref: ref("./pkg/apis/yugabyte/v1alpha1.YBTLSSpec"),
 						},
 					},
 					"master": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBMasterSpec"),
+							Ref: ref("./pkg/apis/yugabyte/v1alpha1.YBMasterSpec"),
 						},
 					},
 					"tserver": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBTServerSpec"),
+							Ref: ref("./pkg/apis/yugabyte/v1alpha1.YBTServerSpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBImageSpec", "github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBMasterSpec", "github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBTLSSpec", "github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBTServerSpec"},
+			"./pkg/apis/yugabyte/v1alpha1.YBImageSpec", "./pkg/apis/yugabyte/v1alpha1.YBMasterSpec", "./pkg/apis/yugabyte/v1alpha1.YBTLSSpec", "./pkg/apis/yugabyte/v1alpha1.YBTServerSpec"},
 	}
 }
 
@@ -113,6 +115,7 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBClusterStatus(ref common.ReferenceCallb
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "YBClusterStatus defines the observed state of YBCluster",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"masterReplicas": {
 						SchemaProps: spec.SchemaProps{
@@ -131,7 +134,6 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBClusterStatus(ref common.ReferenceCallb
 				Required: []string{"masterReplicas", "tserverReplicas"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -140,6 +142,7 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBGFlagSpec(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "YBGFlagSpec defines key-value pairs for each GFlag.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"key": {
 						SchemaProps: spec.SchemaProps{
@@ -156,7 +159,6 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBGFlagSpec(ref common.ReferenceCallback)
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -165,6 +167,7 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBImageSpec(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "YBImageSpec defines docker image specific attributes.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"repository": {
 						SchemaProps: spec.SchemaProps{
@@ -187,7 +190,6 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBImageSpec(ref common.ReferenceCallback)
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -196,6 +198,7 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBMasterSpec(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "YBMasterSpec defines attributes for YBMaster pods.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"replicas": {
 						SchemaProps: spec.SchemaProps{
@@ -229,7 +232,7 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBMasterSpec(ref common.ReferenceCallback
 					},
 					"storage": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBStorageSpec"),
+							Ref: ref("./pkg/apis/yugabyte/v1alpha1.YBStorageSpec"),
 						},
 					},
 					"resources": {
@@ -243,7 +246,7 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBMasterSpec(ref common.ReferenceCallback
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBGFlagSpec"),
+										Ref: ref("./pkg/apis/yugabyte/v1alpha1.YBGFlagSpec"),
 									},
 								},
 							},
@@ -253,7 +256,7 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBMasterSpec(ref common.ReferenceCallback
 			},
 		},
 		Dependencies: []string{
-			"github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBGFlagSpec", "github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBStorageSpec", "k8s.io/api/core/v1.ResourceRequirements"},
+			"./pkg/apis/yugabyte/v1alpha1.YBGFlagSpec", "./pkg/apis/yugabyte/v1alpha1.YBStorageSpec", "k8s.io/api/core/v1.ResourceRequirements"},
 	}
 }
 
@@ -262,6 +265,7 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBRootCASpec(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "YBRootCASpec defines Root CA cert & key attributes required for enabling TLS encryption.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"cert": {
 						SchemaProps: spec.SchemaProps{
@@ -278,7 +282,6 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBRootCASpec(ref common.ReferenceCallback
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -287,6 +290,7 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBStorageSpec(ref common.ReferenceCallbac
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "YBStorageSpec defines storage specific attributes for YBMaster/YBTserver pods.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"count": {
 						SchemaProps: spec.SchemaProps{
@@ -309,7 +313,6 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBStorageSpec(ref common.ReferenceCallbac
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -318,6 +321,7 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBTLSSpec(ref common.ReferenceCallback) c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "YBTLSSpec defines TLS encryption specific attributes",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"enabled": {
 						SchemaProps: spec.SchemaProps{
@@ -327,14 +331,14 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBTLSSpec(ref common.ReferenceCallback) c
 					},
 					"rootCA": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBRootCASpec"),
+							Ref: ref("./pkg/apis/yugabyte/v1alpha1.YBRootCASpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBRootCASpec"},
+			"./pkg/apis/yugabyte/v1alpha1.YBRootCASpec"},
 	}
 }
 
@@ -343,6 +347,7 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBTServerSpec(ref common.ReferenceCallbac
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "YBTServerSpec defines attributes for YBTServer pods.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"replicas": {
 						SchemaProps: spec.SchemaProps{
@@ -394,7 +399,7 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBTServerSpec(ref common.ReferenceCallbac
 					},
 					"storage": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBStorageSpec"),
+							Ref: ref("./pkg/apis/yugabyte/v1alpha1.YBStorageSpec"),
 						},
 					},
 					"resources": {
@@ -408,7 +413,7 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBTServerSpec(ref common.ReferenceCallbac
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBGFlagSpec"),
+										Ref: ref("./pkg/apis/yugabyte/v1alpha1.YBGFlagSpec"),
 									},
 								},
 							},
@@ -418,6 +423,6 @@ func schema_pkg_apis_yugabyte_v1alpha1_YBTServerSpec(ref common.ReferenceCallbac
 			},
 		},
 		Dependencies: []string{
-			"github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBGFlagSpec", "github.com/yugabyte/yugabyte-k8s-operator/pkg/apis/yugabyte/v1alpha1.YBStorageSpec", "k8s.io/api/core/v1.ResourceRequirements"},
+			"./pkg/apis/yugabyte/v1alpha1.YBGFlagSpec", "./pkg/apis/yugabyte/v1alpha1.YBStorageSpec", "k8s.io/api/core/v1.ResourceRequirements"},
 	}
 }
