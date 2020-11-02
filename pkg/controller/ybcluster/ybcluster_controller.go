@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -89,9 +90,10 @@ func Add(mgr manager.Manager) error {
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileYBCluster{
-		client: mgr.GetClient(),
-		scheme: mgr.GetScheme(),
-		config: mgr.GetConfig(),
+		client:   mgr.GetClient(),
+		scheme:   mgr.GetScheme(),
+		config:   mgr.GetConfig(),
+		recorder: mgr.GetEventRecorderFor("ybcluster-controller"),
 	}
 }
 
@@ -159,9 +161,10 @@ var _ reconcile.Reconciler = &ReconcileYBCluster{}
 type ReconcileYBCluster struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client client.Client
-	scheme *runtime.Scheme
-	config *rest.Config
+	client   client.Client
+	scheme   *runtime.Scheme
+	config   *rest.Config
+	recorder record.EventRecorder
 }
 
 // Reconcile reads that state of the cluster for a YBCluster object and makes changes based on the state read
@@ -566,6 +569,13 @@ func (r *ReconcileYBCluster) reconcileStatefulsets(cluster *yugabytev1alpha1.YBC
 				return result, err
 			}
 
+			if cluster.Status.Conditions.IsTrueFor(scalingDownTServersCondition) {
+				msg := "Scaled down TServers successfully"
+				logger.Infof("creating event, type: %s, reason: %s, message: %s",
+					corev1.EventTypeNormal, scaledDownTServersEventReason, msg)
+				r.recorder.Event(cluster, corev1.EventTypeNormal, scaledDownTServersEventReason, msg)
+			}
+
 			// Update the Status after updating the STS
 			tserverScaleCond := status.Condition{
 				Type:    scalingDownTServersCondition,
@@ -579,6 +589,12 @@ func (r *ReconcileYBCluster) reconcileStatefulsets(cluster *yugabytev1alpha1.YBC
 				return result, err
 			}
 		} else {
+			msg := fmt.Sprintf("Scaling down TServers to %d: waiting for data move to complete",
+				cluster.Status.TargetedTServerReplicas)
+			logger.Infof("creating event, type: %s, reason: %s, message: %s",
+				corev1.EventTypeWarning, scalingDownTServersEventReason, msg)
+			r.recorder.Event(cluster, corev1.EventTypeWarning, scalingDownTServersEventReason, msg)
+
 			// Requeue with exponential back-off
 			result.Requeue = true
 			return result, nil

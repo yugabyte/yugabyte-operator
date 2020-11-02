@@ -44,6 +44,11 @@ const (
 	noScaleDownInProgressMsg     string                 = "no TServer(s) are scaling down"
 )
 
+const (
+	scalingDownTServersEventReason string = "ScalingDownTServers"
+	scaledDownTServersEventReason  string = "ScaledDownTServers"
+)
+
 // scaleTServers determines if TServers are going to be scaled up or
 // scaled down. If scale down operation is required, it blacklists
 // TServer pods. Retruns boolean indicating if StatefulSet should be
