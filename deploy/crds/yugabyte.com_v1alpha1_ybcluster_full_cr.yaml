@@ -27,10 +27,10 @@ spec:
       storageClass: standard
     resources:
       requests:
-        cpu: 0.2
+        cpu: 200m
         memory: 256Mi
       limits:
-        cpu: 0.5
+        cpu: 500m
         memory: 512Mi
     gflags:
       - key: default_memory_limit_to_ram_ratio
@@ -53,10 +53,10 @@ spec:
       storageClass: standard
     resources:
       requests:
-        cpu: 0.2
+        cpu: 200m
         memory: 256Mi
       limits:
-        cpu: 0.5
+        cpu: 500m
         memory: 512Mi
     gflags:
       - key: default_memory_limit_to_ram_ratio
