@@ -16,7 +16,7 @@ jobs:
     - name: "Extract version number from tag"
       id: extract-version
       run: |
-        tag_name="${{ github.event.client_payload.tag }}"
+        tag_name="${{ github.event.client_payload.release }}"
         echo "Extracting version number from the tag '${tag_name}'."
         version_number="${tag_name/v/}"
         # Keep dots and count the string length
