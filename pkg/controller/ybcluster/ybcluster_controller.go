@@ -11,6 +11,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -242,17 +243,52 @@ func (r *ReconcileYBCluster) reconcileSecrets(cluster *yugabytev1alpha1.YBCluste
 		// delete if object exists.
 		if masterSecret != nil {
 			logger.Infof("deleting master secret")
-			if err := r.client.Delete(context.TODO(), masterSecret); err != nil {
-				logger.Errorf("failed to delete existing master secrets object. err: %+v", err)
-				return err
+
+			if uidStr, ok := cluster.Labels["MasterSecret-UID"]; ok && uidStr != "" {
+				uid := types.UID(uidStr)
+				if err := r.client.Delete(context.TODO(), masterSecret,
+					&client.DeleteOptions{Preconditions: &metav1.Preconditions{UID: &uid}}); err != nil {
+					logger.Errorf("failed to delete existing master secrets object. err: %+v", err)
+					return err
+				}
+			} else {
+				logger.Infof("failed to get MasterSecret-UID label, deleting without condition")
+				if err := r.client.Delete(context.TODO(), masterSecret); err != nil {
+					logger.Errorf("failed to delete existing master secrets object. err: %+v", err)
+					return err
+				}
+			}
+
+			// if the delete is successful, remove the MasterSecret-UID label
+			patch := []byte(`{"metadata":{"labels":{"MasterSecret-UID":""}}}`)
+			if err := r.client.Patch(context.TODO(), cluster,
+				client.RawPatch(types.MergePatchType, patch)); err != nil {
+				logger.Errorf("failed to patch cluster to empty MasterSecret-UID label. err: %+v", err)
 			}
 		}
 
 		if tserverSecret != nil {
 			logger.Infof("deleting tserver secret")
-			if err := r.client.Delete(context.TODO(), tserverSecret); err != nil {
-				logger.Errorf("failed to delete existing tserver secrets object. err: %+v", err)
-				return err
+			if uidStr, ok := cluster.Labels["TServerSecret-UID"]; ok && uidStr != "" {
+				uid := types.UID(uidStr)
+				if err := r.client.Delete(context.TODO(), tserverSecret,
+					&client.DeleteOptions{Preconditions: &metav1.Preconditions{UID: &uid}}); err != nil {
+					logger.Errorf("failed to delete existing tserver secrets object. err: %+v", err)
+					return err
+				}
+			} else {
+				logger.Infof("failed to get TServerSecret-UID label, deleting without condition")
+				if err := r.client.Delete(context.TODO(), tserverSecret); err != nil {
+					logger.Errorf("failed to delete existing tserver secrets object. err: %+v", err)
+					return err
+				}
+			}
+
+			// if the delete is successful, remove the TServerSecret-UID label
+			patch := []byte(`{"metadata":{"labels":{"TServerSecret-UID":""}}}`)
+			if err := r.client.Patch(context.TODO(), cluster,
+				client.RawPatch(types.MergePatchType, patch)); err != nil {
+				logger.Errorf("failed to patch cluster to empty TServerSecret-UID. err: %+v", err)
 			}
 		}
 	} else {
@@ -288,6 +324,13 @@ func (r *ReconcileYBCluster) reconcileSecrets(cluster *yugabytev1alpha1.YBCluste
 			if err != nil {
 				return err
 			}
+
+			patch_str := fmt.Sprintf(`{"metadata":{"labels":{"MasterSecret-UID":"%s"}}}`, string(masterSecret.UID))
+			patch := []byte(patch_str)
+			if err := r.client.Patch(context.TODO(), cluster,
+				client.RawPatch(types.MergePatchType, patch)); err != nil {
+				logger.Errorf("failed to patch master secret uid to cluster. err: %+v", err)
+			}
 		}
 
 		if tserverSecret != nil {
@@ -320,6 +363,13 @@ func (r *ReconcileYBCluster) reconcileSecrets(cluster *yugabytev1alpha1.YBCluste
 			err = r.client.Create(context.TODO(), tserverSecret)
 			if err != nil {
 				return err
+			}
+
+			patch_str := fmt.Sprintf(`{"metadata":{"labels":{"TServerSecret-UID":"%s"}}}`, string(tserverSecret.UID))
+			patch := []byte(patch_str)
+			if err := r.client.Patch(context.TODO(), cluster,
+				client.RawPatch(types.MergePatchType, patch)); err != nil {
+				logger.Errorf("failed to patch tserver secret to cluster. err: %+v", err)
 			}
 		}
 	}
