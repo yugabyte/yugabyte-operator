@@ -65,7 +65,7 @@ func updateStatefulSet(newCluster *yugabytev1alpha1.YBCluster, sfs *appsv1.State
 	replicas := masterSpec.Replicas
 	masterRPCPort := masterSpec.MasterRPCPort
 	volumeClaimTemplates := getVolumeClaimTemplates(&masterSpec.Storage)
-	command := createMasterContainerCommand(newCluster.Namespace, masterRPCPort, replicas, newCluster.Spec.ReplicationFactor, masterSpec.Storage.Count, masterSpec.Gflags, newCluster.Spec.TLS.Enabled)
+	command := createMasterContainerCommand(newCluster.Namespace, newCluster.Spec.Domain, masterRPCPort, replicas, newCluster.Spec.ReplicationFactor, masterSpec.Storage.Count, masterSpec.Gflags, newCluster.Spec.TLS.Enabled)
 	containerPorts := createMasterContainerPortsList(masterSpec.MasterUIPort, masterRPCPort)
 	storageSpec := &masterSpec.Storage
 
@@ -73,7 +73,7 @@ func updateStatefulSet(newCluster *yugabytev1alpha1.YBCluster, sfs *appsv1.State
 		tserverSpec := newCluster.Spec.Tserver
 		replicas = newCluster.Status.TargetedTServerReplicas
 		volumeClaimTemplates = getVolumeClaimTemplates(&tserverSpec.Storage)
-		command = createTServerContainerCommand(newCluster.Namespace, masterRPCPort, tserverSpec.TserverRPCPort, tserverSpec.YSQLPort, masterSpec.Replicas, tserverSpec.Storage.Count, tserverSpec.Gflags, newCluster.Spec.TLS.Enabled)
+		command = createTServerContainerCommand(newCluster.Namespace, newCluster.Spec.Domain, masterRPCPort, tserverSpec.TserverRPCPort, tserverSpec.YSQLPort, masterSpec.Replicas, tserverSpec.Storage.Count, tserverSpec.Gflags, newCluster.Spec.TLS.Enabled)
 		containerPorts = createTServerContainerPortsList(tserverSpec.TserverUIPort, tserverSpec.TserverRPCPort, tserverSpec.YCQLPort, tserverSpec.YedisPort, tserverSpec.YSQLPort)
 		storageSpec = &tserverSpec.Storage
 	}

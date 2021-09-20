@@ -35,6 +35,7 @@ metadata:
   namespace: yb-operator
 spec:
   replicationFactor: 3
+  domain: cluster.local
   master:
     replicas: 3
     storage:

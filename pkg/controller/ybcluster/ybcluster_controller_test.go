@@ -50,6 +50,10 @@ func TestAddDefaults(t *testing.T) {
 	assert.NotNil(t, &minimalCluster.TLS.Enabled)
 	assert.False(t, minimalCluster.TLS.Enabled)
 
+        // Validate Domain
+        assert.NotNil(t, &minimalCluster.Domain)
+        assert.Equal(t, getMinimalClusterSpec().Domain, minimalCluster.Domain)
+
 	// Validate ReplicationFactor
 	assert.NotNil(t, &minimalCluster.ReplicationFactor)
 	assert.Equal(t, getMinimalClusterSpec().ReplicationFactor, minimalCluster.ReplicationFactor)
@@ -165,6 +169,7 @@ func TestCreateMasterContainerCommand(t *testing.T) {
 
 	masterCommand := createMasterContainerCommand(
 		"default",
+                minimalCluster.Domain,
 		minimalCluster.Master.MasterRPCPort,
 		minimalCluster.Master.Replicas,
 		minimalCluster.ReplicationFactor,
@@ -183,6 +188,7 @@ func TestCreateMasterContainerCommand(t *testing.T) {
 	}
 	masterCommand = createMasterContainerCommand(
 		"default",
+                minimalCluster.Domain,
 		minimalCluster.Master.MasterRPCPort,
 		minimalCluster.Master.Replicas,
 		minimalCluster.ReplicationFactor,
@@ -200,6 +206,7 @@ func TestCreateTServerContainerCommand(t *testing.T) {
 
 	tserverCommand := createTServerContainerCommand(
 		"default",
+                minimalCluster.Domain,
 		minimalCluster.Master.MasterRPCPort,
 		minimalCluster.Tserver.TserverRPCPort,
 		minimalCluster.Tserver.YSQLPort,
@@ -219,6 +226,7 @@ func TestCreateTServerContainerCommand(t *testing.T) {
 	}
 	tserverCommand = createTServerContainerCommand(
 		"default",
+                minimalCluster.Domain,
 		minimalCluster.Master.MasterRPCPort,
 		minimalCluster.Tserver.TserverRPCPort,
 		minimalCluster.Tserver.YSQLPort,
@@ -374,7 +382,7 @@ func TestReconcileWithTLS(t *testing.T) {
 func TestGetMasterAddresses(t *testing.T) {
 	expected := "yb-master-0.yb-masters.yb-operator.svc.cluster.local:7100,yb-master-1.yb-masters.yb-operator.svc.cluster.local:7100,yb-master-2.yb-masters.yb-operator.svc.cluster.local:7100"
 
-	actual := getMasterAddresses("yb-operator", int32(7100), int32(3))
+	actual := getMasterAddresses("yb-operator", "cluster.local", int32(7100), int32(3))
 
 	assert.Equal(t, expected, actual)
 }
@@ -382,6 +390,7 @@ func TestGetMasterAddresses(t *testing.T) {
 func getMinimalClusterSpec() *ybv1alpha1.YBClusterSpec {
 	return &ybv1alpha1.YBClusterSpec{
 		ReplicationFactor: 3,
+                Domain: "cluster.local",
 		Master: ybv1alpha1.YBMasterSpec{
 			Replicas: 3,
 			Storage: ybv1alpha1.YBStorageSpec{
@@ -414,6 +423,7 @@ func getFullClusterSpec() *ybv1alpha1.YBClusterSpec {
 			},
 		},
 		ReplicationFactor: 4,
+                Domain: "cluster.local",
 		Master: ybv1alpha1.YBMasterSpec{
 			Replicas:            3,
 			MasterUIPort:        7001,
