@@ -18,7 +18,7 @@ type YBClusterSpec struct {
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 	// +kubebuilder:validation:Minimum=1
 	ReplicationFactor int32         `json:"replicationFactor,omitempty"`
-        Domain            string        `json:"domain,omitempty"`
+	Domain            string        `json:"domain,omitempty"`
 	Image             YBImageSpec   `json:"image,omitempty"`
 	TLS               YBTLSSpec     `json:"tls,omitempty"`
 	Master            YBMasterSpec  `json:"master,omitempty"`

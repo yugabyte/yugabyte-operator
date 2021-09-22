@@ -50,9 +50,9 @@ func TestAddDefaults(t *testing.T) {
 	assert.NotNil(t, &minimalCluster.TLS.Enabled)
 	assert.False(t, minimalCluster.TLS.Enabled)
 
-        // Validate Domain
-        assert.NotNil(t, &minimalCluster.Domain)
-        assert.Equal(t, getMinimalClusterSpec().Domain, minimalCluster.Domain)
+	// Validate Domain
+	assert.NotNil(t, &minimalCluster.Domain)
+	assert.Equal(t, getMinimalClusterSpec().Domain, minimalCluster.Domain)
 
 	// Validate ReplicationFactor
 	assert.NotNil(t, &minimalCluster.ReplicationFactor)
@@ -169,7 +169,7 @@ func TestCreateMasterContainerCommand(t *testing.T) {
 
 	masterCommand := createMasterContainerCommand(
 		"default",
-                minimalCluster.Domain,
+		minimalCluster.Domain,
 		minimalCluster.Master.MasterRPCPort,
 		minimalCluster.Master.Replicas,
 		minimalCluster.ReplicationFactor,
@@ -188,7 +188,7 @@ func TestCreateMasterContainerCommand(t *testing.T) {
 	}
 	masterCommand = createMasterContainerCommand(
 		"default",
-                minimalCluster.Domain,
+		minimalCluster.Domain,
 		minimalCluster.Master.MasterRPCPort,
 		minimalCluster.Master.Replicas,
 		minimalCluster.ReplicationFactor,
@@ -206,7 +206,7 @@ func TestCreateTServerContainerCommand(t *testing.T) {
 
 	tserverCommand := createTServerContainerCommand(
 		"default",
-                minimalCluster.Domain,
+		minimalCluster.Domain,
 		minimalCluster.Master.MasterRPCPort,
 		minimalCluster.Tserver.TserverRPCPort,
 		minimalCluster.Tserver.YSQLPort,
@@ -226,7 +226,7 @@ func TestCreateTServerContainerCommand(t *testing.T) {
 	}
 	tserverCommand = createTServerContainerCommand(
 		"default",
-                minimalCluster.Domain,
+		minimalCluster.Domain,
 		minimalCluster.Master.MasterRPCPort,
 		minimalCluster.Tserver.TserverRPCPort,
 		minimalCluster.Tserver.YSQLPort,
@@ -390,7 +390,7 @@ func TestGetMasterAddresses(t *testing.T) {
 func getMinimalClusterSpec() *ybv1alpha1.YBClusterSpec {
 	return &ybv1alpha1.YBClusterSpec{
 		ReplicationFactor: 3,
-                Domain: "cluster.local",
+		Domain:            "cluster.local",
 		Master: ybv1alpha1.YBMasterSpec{
 			Replicas: 3,
 			Storage: ybv1alpha1.YBStorageSpec{
@@ -423,7 +423,7 @@ func getFullClusterSpec() *ybv1alpha1.YBClusterSpec {
 			},
 		},
 		ReplicationFactor: 4,
-                Domain: "cluster.local",
+		Domain:            "cluster.local",
 		Master: ybv1alpha1.YBMasterSpec{
 			Replicas:            3,
 			MasterUIPort:        7001,

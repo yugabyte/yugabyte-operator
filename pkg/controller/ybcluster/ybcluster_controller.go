@@ -72,7 +72,7 @@ const (
 	podManagementPolicyDefault  = appsv1.ParallelPodManagement
 	storageCountDefault         = int32(1)
 	storageClassDefault         = "standard"
-        domainDefault               = "cluster.local"
+	domainDefault               = "cluster.local"
 	labelHostname               = "kubernetes.io/hostname"
 	appLabel                    = "app"
 )
@@ -686,7 +686,7 @@ func addDefaults(spec *yugabytev1alpha1.YBClusterSpec) {
 
 	if &spec.Domain == nil {
 		spec.Domain = domainDefault
-        }
+	}
 
 	masterSpec := &spec.Master
 
