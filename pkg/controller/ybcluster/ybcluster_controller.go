@@ -684,7 +684,7 @@ func addDefaults(spec *yugabytev1alpha1.YBClusterSpec) {
 		}
 	}
 
-	if &spec.Domain == nil {
+	if &spec.Domain == nil || len(spec.Domain) == 0 {
 		spec.Domain = domainDefault
 	}
 
