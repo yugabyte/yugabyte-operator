@@ -72,6 +72,7 @@ const (
 	podManagementPolicyDefault  = appsv1.ParallelPodManagement
 	storageCountDefault         = int32(1)
 	storageClassDefault         = "standard"
+	domainDefault               = "cluster.local"
 	labelHostname               = "kubernetes.io/hostname"
 	appLabel                    = "app"
 )
@@ -683,6 +684,10 @@ func addDefaults(spec *yugabytev1alpha1.YBClusterSpec) {
 		}
 	}
 
+	if &spec.Domain == nil || len(spec.Domain) == 0 {
+		spec.Domain = domainDefault
+	}
+
 	masterSpec := &spec.Master
 
 	if &masterSpec.MasterUIPort == nil || masterSpec.MasterUIPort <= 0 {
@@ -832,14 +837,14 @@ func createUIServicePorts(clusterSpec *yugabytev1alpha1.YBClusterSpec, isTServer
 	return servicePorts
 }
 
-func createMasterContainerCommand(namespace string, grpcPort, replicas, replicationFactor, storageCount int32, masterGFlags []yugabytev1alpha1.YBGFlagSpec, tlsEnabled bool) []string {
+func createMasterContainerCommand(namespace string, domain string, grpcPort, replicas, replicationFactor, storageCount int32, masterGFlags []yugabytev1alpha1.YBGFlagSpec, tlsEnabled bool) []string {
 	serviceName := masterNamePlural
 	command := []string{
 		"/home/yugabyte/bin/yb-master",
 		fmt.Sprintf("--fs_data_dirs=%s", createListOfVolumeMountPaths(storageCount)),
-		fmt.Sprintf("--rpc_bind_addresses=$(POD_NAME).%s.%s.svc.cluster.local:%d", serviceName, namespace, grpcPort),
-		fmt.Sprintf("--server_broadcast_addresses=$(POD_NAME).%s.%s.svc.cluster.local:%d", serviceName, namespace, grpcPort),
-		fmt.Sprintf("--master_addresses=%s", getMasterAddresses(namespace, grpcPort, replicas)),
+		fmt.Sprintf("--rpc_bind_addresses=$(POD_NAME).%s.%s.svc.%s:%d", serviceName, namespace, domain, grpcPort),
+		fmt.Sprintf("--server_broadcast_addresses=$(POD_NAME).%s.%s.svc.%s:%d", serviceName, namespace, domain, grpcPort),
+		fmt.Sprintf("--master_addresses=%s", getMasterAddresses(namespace, domain, grpcPort, replicas)),
 		"--use_initial_sys_catalog_snapshot=true",
 		"--metric_node_name=$(POD_NAME)",
 		fmt.Sprintf("--replication_factor=%d", replicationFactor),
@@ -861,26 +866,26 @@ func createMasterContainerCommand(namespace string, grpcPort, replicas, replicat
 	return command
 }
 
-func getMasterAddresses(namespace string, masterGRPCPort, masterReplicas int32) string {
+func getMasterAddresses(namespace string, domain string, masterGRPCPort, masterReplicas int32) string {
 	masters := make([]string, masterReplicas)
 
 	for i := 0; i < int(masterReplicas); i++ {
-		masters[i] = fmt.Sprintf("%s-%d.%s.%s.svc.cluster.local:%d", masterName, i, masterNamePlural, namespace, masterGRPCPort)
+		masters[i] = fmt.Sprintf("%s-%d.%s.%s.svc.%s:%d", masterName, i, masterNamePlural, namespace, domain, masterGRPCPort)
 	}
 
 	return strings.Join(masters, ",")
 }
 
-func createTServerContainerCommand(namespace string, masterGRPCPort, tserverGRPCPort, pgsqlPort, masterReplicas, storageCount int32, tserverGFlags []yugabytev1alpha1.YBGFlagSpec, tlsEnabled bool) []string {
+func createTServerContainerCommand(namespace string, domain string, masterGRPCPort, tserverGRPCPort, pgsqlPort, masterReplicas, storageCount int32, tserverGFlags []yugabytev1alpha1.YBGFlagSpec, tlsEnabled bool) []string {
 	serviceName := tserverNamePlural
 	command := []string{
 		"/home/yugabyte/bin/yb-tserver",
 		fmt.Sprintf("--fs_data_dirs=%s", createListOfVolumeMountPaths(storageCount)),
-		fmt.Sprintf("--rpc_bind_addresses=$(POD_NAME).%s.%s.svc.cluster.local:%d", serviceName, namespace, tserverGRPCPort),
-		fmt.Sprintf("--server_broadcast_addresses=$(POD_NAME).%s.%s.svc.cluster.local:%d", serviceName, namespace, tserverGRPCPort),
+		fmt.Sprintf("--rpc_bind_addresses=$(POD_NAME).%s.%s.svc.%s:%d", serviceName, namespace, domain, tserverGRPCPort),
+		fmt.Sprintf("--server_broadcast_addresses=$(POD_NAME).%s.%s.svc.%s:%d", serviceName, namespace, domain, tserverGRPCPort),
 		"--start_pgsql_proxy",
-		fmt.Sprintf("--pgsql_proxy_bind_address=$(POD_IP):%d", pgsqlPort),
-		fmt.Sprintf("--tserver_master_addrs=%s", getMasterAddresses(namespace, masterGRPCPort, masterReplicas)),
+		fmt.Sprintf("--pgsql_proxy_bind_address=0.0.0.0:%d", pgsqlPort),
+		fmt.Sprintf("--tserver_master_addrs=%s", getMasterAddresses(namespace, domain, masterGRPCPort, masterReplicas)),
 		"--metric_node_name=$(POD_NAME)",
 		"--dump_certificate_entries",
 		"--stderrthreshold=0",

@@ -68,8 +68,8 @@ func getSecretData(cluster *yugabytev1alpha1.YBCluster, isTServerService bool) (
 	}
 
 	for i := 0; i < int(replicas); i++ {
-		cn := fmt.Sprintf("%s-%d.%s.%s.svc.cluster.local", nodeName, i, headlessServiceName, cluster.Namespace)
-		dnsList := []string{fmt.Sprintf("*.*.%s", cluster.Namespace), fmt.Sprintf("*.*.%s.svc.cluster.local", cluster.Namespace)}
+		cn := fmt.Sprintf("%s-%d.%s.%s.svc.%s", nodeName, i, headlessServiceName, cluster.Namespace, cluster.Spec.Domain)
+		dnsList := []string{fmt.Sprintf("*.*.%s", cluster.Namespace), fmt.Sprintf("*.*.%s.svc.%s", cluster.Namespace, cluster.Spec.Domain)}
 		certPair, err := generateSignedCerts(cn, dnsList, 3650, &cluster.Spec.TLS.RootCA)
 
 		if err != nil {
@@ -286,7 +286,7 @@ func createPodSpec(cluster *yugabytev1alpha1.YBCluster, isTServerStatefulset boo
 
 func createContainer(cluster *yugabytev1alpha1.YBCluster, isTServerStatefulset bool, name, serviceName string) corev1.Container {
 	masterSpec := cluster.Spec.Master
-	command := createMasterContainerCommand(cluster.Namespace, masterSpec.MasterRPCPort, masterSpec.Replicas, cluster.Spec.ReplicationFactor, masterSpec.Storage.Count, masterSpec.Gflags, cluster.Spec.TLS.Enabled)
+	command := createMasterContainerCommand(cluster.Namespace, cluster.Spec.Domain, masterSpec.MasterRPCPort, masterSpec.Replicas, cluster.Spec.ReplicationFactor, masterSpec.Storage.Count, masterSpec.Gflags, cluster.Spec.TLS.Enabled)
 	containerPorts := createMasterContainerPortsList(masterSpec.MasterUIPort, masterSpec.MasterRPCPort)
 	storageSpec := &masterSpec.Storage
 	resources := masterSpec.Resources
@@ -294,7 +294,7 @@ func createContainer(cluster *yugabytev1alpha1.YBCluster, isTServerStatefulset b
 	if isTServerStatefulset {
 		masterRPCPort := masterSpec.MasterRPCPort
 		tserverSpec := cluster.Spec.Tserver
-		command = createTServerContainerCommand(cluster.Namespace, masterRPCPort, tserverSpec.TserverRPCPort, tserverSpec.YSQLPort, masterSpec.Replicas, tserverSpec.Storage.Count, tserverSpec.Gflags, cluster.Spec.TLS.Enabled)
+		command = createTServerContainerCommand(cluster.Namespace, cluster.Spec.Domain, masterRPCPort, tserverSpec.TserverRPCPort, tserverSpec.YSQLPort, masterSpec.Replicas, tserverSpec.Storage.Count, tserverSpec.Gflags, cluster.Spec.TLS.Enabled)
 		containerPorts = createTServerContainerPortsList(tserverSpec.TserverUIPort, tserverSpec.TserverRPCPort, tserverSpec.YCQLPort, tserverSpec.YedisPort, tserverSpec.YSQLPort)
 		storageSpec = &tserverSpec.Storage
 		resources = tserverSpec.Resources

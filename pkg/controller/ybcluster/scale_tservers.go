@@ -175,6 +175,7 @@ func (r *ReconcileYBCluster) syncBlacklist(cluster *yugabytev1alpha1.YBCluster) 
 			ybAdminMasterAddressesFlag,
 			getMasterAddresses(
 				cluster.Namespace,
+				cluster.Spec.Domain,
 				cluster.Spec.Master.MasterRPCPort,
 				cluster.Spec.Master.Replicas,
 			),
@@ -199,10 +200,11 @@ func (r *ReconcileYBCluster) syncBlacklist(cluster *yugabytev1alpha1.YBCluster) 
 
 	for _, pod := range pods.Items {
 		podHostPort := fmt.Sprintf(
-			"%s.%s.%s.svc.cluster.local:%d",
+			"%s.%s.%s.svc.%s:%d",
 			pod.ObjectMeta.Name,
 			tserverNamePlural,
 			cluster.Namespace,
+			cluster.Spec.Domain,
 			cluster.Spec.Tserver.TserverRPCPort,
 		)
 
@@ -225,6 +227,7 @@ func (r *ReconcileYBCluster) syncBlacklist(cluster *yugabytev1alpha1.YBCluster) 
 				ybAdminMasterAddressesFlag,
 				getMasterAddresses(
 					cluster.Namespace,
+					cluster.Spec.Domain,
 					cluster.Spec.Master.MasterRPCPort,
 					cluster.Spec.Master.Replicas,
 				),
@@ -283,6 +286,7 @@ func (r *ReconcileYBCluster) checkDataMoveProgress(cluster *yugabytev1alpha1.YBC
 			ybAdminMasterAddressesFlag,
 			getMasterAddresses(
 				cluster.Namespace,
+				cluster.Spec.Domain,
 				cluster.Spec.Master.MasterRPCPort,
 				cluster.Spec.Master.Replicas,
 			),

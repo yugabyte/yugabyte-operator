@@ -1,5 +1,5 @@
 ## Build instructions:
-* [Install operator sdk](https://github.com/operator-framework/operator-sdk/blob/master/doc/user/install-operator-sdk.md)
+* [Install operator sdk](https://sdk.operatorframework.io/docs/installation)
 * Checkout the source code on your local computer & change into the directory
 * If you have already checked out the source code, pull the latest code from github.
 * After making your changes, build a docker image of the operator. Make sure you are using `go mod` for dependency management.
