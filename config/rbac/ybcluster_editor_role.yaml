@@ -1,0 +1,24 @@
+# permissions for end users to edit ybclusters.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ybcluster-editor-role
+rules:
+- apiGroups:
+  - yugabyte.com
+  resources:
+  - ybclusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - yugabyte.com
+  resources:
+  - ybclusters/status
+  verbs:
+  - get
