@@ -123,3 +123,9 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: "yugabyte-operator"
+      livenessProbe:
+        httpGet:
+          path: /healthz
+          port: 6789
+        initialDelaySeconds: 5
+        periodSeconds: 3
