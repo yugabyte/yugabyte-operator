@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -37,6 +38,7 @@ import (
 	yugabytecomv1alpha1 "github.com/yugabyte/yugabyte-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -91,7 +93,7 @@ const (
 type YBClusterReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
-	config   *rest.Config
+	Config   *rest.Config
 	recorder record.EventRecorder
 }
 
@@ -111,11 +113,11 @@ type YBClusterReconciler struct {
 func (r *YBClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	logger.Info("Reconciling YBCluster")
+	logger.Info("Reconciling YBCluster", "cluster", req.NamespacedName)
 
 	// Fetch the YBCluster instance
 	cluster := &yugabytecomv1alpha1.YBCluster{}
-	err := r.Get(context.TODO(), req.NamespacedName, cluster)
+	err := r.Get(ctx, req.NamespacedName, cluster)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -130,24 +132,24 @@ func (r *YBClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	validateCR(&cluster.Spec)
 	addDefaults(&cluster.Spec)
 
-	if err = r.reconcileSecrets(cluster, logger); err != nil {
+	if err = r.reconcileSecrets(ctx, cluster, logger); err != nil {
 		// Error reconciling secrets - requeue the request.
 		return reconcile.Result{}, err
 	}
 
-	if err = r.reconcileHeadlessServices(cluster, logger); err != nil {
+	if err = r.reconcileHeadlessServices(ctx, cluster, logger); err != nil {
 		// Error reconciling headless services - requeue the request.
 		return reconcile.Result{}, err
 	}
 
-	if err = r.reconcileUIServices(cluster, logger); err != nil {
+	if err = r.reconcileUIServices(ctx, cluster, logger); err != nil {
 		// Error reconciling ui services - requeue the request.
 		return reconcile.Result{}, err
 	}
 
-	result, err := r.reconcileStatefulsets(cluster, logger)
-	if err != nil {
-		return result, err
+	if err = r.reconcileStatefulsets(ctx, cluster, logger); err != nil {
+		// Error reconciling statefulsets - requeue the request.
+		return reconcile.Result{}, err
 	}
 
 	if err := r.syncBlacklist(cluster, logger); err != nil {
@@ -160,17 +162,17 @@ func (r *YBClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return reconcile.Result{}, err
 	}
 
-	return result, nil
+	return reconcile.Result{}, nil
 }
 
-func (r *YBClusterReconciler) reconcileSecrets(cluster *yugabytecomv1alpha1.YBCluster, logger logr.Logger) error {
+func (r *YBClusterReconciler) reconcileSecrets(ctx context.Context, cluster *yugabytecomv1alpha1.YBCluster, logger logr.Logger) error {
 
-	masterSecret, err := r.fetchSecret(cluster.Namespace, false)
+	masterSecret, err := r.fetchSecret(ctx, cluster.Namespace, false)
 	if err != nil {
 		return err
 	}
 
-	tserverSecret, err := r.fetchSecret(cluster.Namespace, true)
+	tserverSecret, err := r.fetchSecret(ctx, cluster.Namespace, true)
 	if err != nil {
 		return err
 	}
@@ -178,17 +180,17 @@ func (r *YBClusterReconciler) reconcileSecrets(cluster *yugabytecomv1alpha1.YBCl
 	if !cluster.Spec.TLS.Enabled {
 		// delete if object exists.
 		if masterSecret != nil {
-			logger.Info("deleting master secret")
-			if err := r.Delete(context.TODO(), masterSecret); err != nil {
-				logger.Error(err, "failed to delete existing master secrets object.")
+			logger.Info("deleting master secret", "cluster", cluster.Name, "secret", masterSecret.Name)
+			if err := r.Delete(ctx, masterSecret); err != nil {
+				logger.Error(err, "failed to delete existing master secrets object")
 				return err
 			}
 		}
 
 		if tserverSecret != nil {
-			logger.Info("deleting tserver secret")
-			if err := r.Delete(context.TODO(), tserverSecret); err != nil {
-				logger.Error(err, "failed to delete existing tserver secrets object.")
+			logger.Info("deleting tserver secret", "cluster", cluster.Name, "secret", tserverSecret.Name)
+			if err := r.Delete(ctx, tserverSecret); err != nil {
+				logger.Error(err, "failed to delete existing tserver secrets object")
 				return err
 			}
 		}
@@ -196,14 +198,14 @@ func (r *YBClusterReconciler) reconcileSecrets(cluster *yugabytecomv1alpha1.YBCl
 		// check if object exists.Update it, if yes. Create it, if it doesn't
 		if masterSecret != nil {
 			// Updating
-			logger.Info("updating master secret")
+			logger.Info("updating master secret", "cluster", cluster.Name, "secret", masterSecret.Name)
 			if err := updateMasterSecret(cluster, masterSecret); err != nil {
-				logger.Error(err, "failed to update master secrets object.")
+				logger.Error(err, "failed to update master secrets object")
 				return err
 			}
 
-			if err := r.Update(context.TODO(), masterSecret); err != nil {
-				logger.Error(err, "failed to update master secrets object.")
+			if err := r.Update(ctx, masterSecret); err != nil {
+				logger.Error(err, "failed to update master secrets object")
 				return err
 			}
 		} else {
@@ -211,17 +213,17 @@ func (r *YBClusterReconciler) reconcileSecrets(cluster *yugabytecomv1alpha1.YBCl
 			masterSecret, err := createMasterSecret(cluster)
 			if err != nil {
 				// Error creating master secret object
-				logger.Error(err, "forming master secret object failed.")
+				logger.Error(err, "forming master secret object failed")
 				return err
 			}
 
-			logger.Info("creating a new Secret %s for YBMasters in namespace %s", masterSecret.Name, masterSecret.Namespace)
+			logger.Info("creating a new Secret for YBMasters", "name", masterSecret.Name, "namespace", masterSecret.Namespace)
 			// Set YBCluster instance as the owner and controller for master secret
 			if err := controllerutil.SetControllerReference(cluster, masterSecret, r.Scheme); err != nil {
 				return err
 			}
 
-			err = r.Create(context.TODO(), masterSecret)
+			err = r.Create(ctx, masterSecret)
 			if err != nil {
 				return err
 			}
@@ -229,14 +231,14 @@ func (r *YBClusterReconciler) reconcileSecrets(cluster *yugabytecomv1alpha1.YBCl
 
 		if tserverSecret != nil {
 			// Updating
-			logger.Info("updating tserver secret")
+			logger.Info("updating tserver secret", "cluster", cluster.Name, "secret", tserverSecret.Name)
 			if err := updateTServerSecret(cluster, tserverSecret); err != nil {
-				logger.Error(err, "failed to update tserver secrets object.")
+				logger.Error(err, "failed to update tserver secrets object")
 				return err
 			}
 
-			if err := r.Update(context.TODO(), tserverSecret); err != nil {
-				logger.Error(err, "failed to update tserver secrets object.")
+			if err := r.Update(ctx, tserverSecret); err != nil {
+				logger.Error(err, "failed to update tserver secrets object")
 				return err
 			}
 		} else {
@@ -244,17 +246,17 @@ func (r *YBClusterReconciler) reconcileSecrets(cluster *yugabytecomv1alpha1.YBCl
 			tserverSecret, err := createTServerSecret(cluster)
 			if err != nil {
 				// Error creating master secret object
-				logger.Error(err, "forming master secret object failed.")
+				logger.Error(err, "forming master secret object failed")
 				return err
 			}
 
-			logger.Info("creating a new Secret %s for YBTServers in namespace %s", tserverSecret.Name, tserverSecret.Namespace)
+			logger.Info("creating a new Secret for YBTServers", "name", tserverSecret.Name, "namespace", tserverSecret.Namespace)
 			// Set YBCluster instance as the owner and controller for tserver secret
 			if err := controllerutil.SetControllerReference(cluster, tserverSecret, r.Scheme); err != nil {
 				return err
 			}
 
-			err = r.Create(context.TODO(), tserverSecret)
+			err = r.Create(ctx, tserverSecret)
 			if err != nil {
 				return err
 			}
@@ -264,7 +266,7 @@ func (r *YBClusterReconciler) reconcileSecrets(cluster *yugabytecomv1alpha1.YBCl
 	return nil
 }
 
-func (r *YBClusterReconciler) fetchSecret(namespace string, isTserver bool) (*corev1.Secret, error) {
+func (r *YBClusterReconciler) fetchSecret(ctx context.Context, namespace string, isTserver bool) (*corev1.Secret, error) {
 	name := masterSecretName
 
 	if isTserver {
@@ -272,7 +274,7 @@ func (r *YBClusterReconciler) fetchSecret(namespace string, isTserver bool) (*co
 	}
 
 	found := &corev1.Secret{}
-	err := r.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, found)
+	err := r.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		return nil, nil
 	} else if err != nil {
@@ -282,15 +284,15 @@ func (r *YBClusterReconciler) fetchSecret(namespace string, isTserver bool) (*co
 	return found, nil
 }
 
-func (r *YBClusterReconciler) reconcileHeadlessServices(cluster *yugabytecomv1alpha1.YBCluster, logger logr.Logger) error {
+func (r *YBClusterReconciler) reconcileHeadlessServices(ctx context.Context, cluster *yugabytecomv1alpha1.YBCluster, logger logr.Logger) error {
 	// Check if master headless service already exists
 	found := &corev1.Service{}
-	err := r.Get(context.TODO(), types.NamespacedName{Name: masterNamePlural, Namespace: cluster.Namespace}, found)
+	err := r.Get(ctx, types.NamespacedName{Name: masterNamePlural, Namespace: cluster.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		masterHeadlessService, err := createMasterHeadlessService(cluster)
 		if err != nil {
 			// Error creating master headless service object
-			logger.Error(err, "forming master headless service object failed.")
+			logger.Error(err, "forming master headless service object failed")
 			return err
 		}
 
@@ -298,30 +300,30 @@ func (r *YBClusterReconciler) reconcileHeadlessServices(cluster *yugabytecomv1al
 		if err := controllerutil.SetControllerReference(cluster, masterHeadlessService, r.Scheme); err != nil {
 			return err
 		}
-		logger.Info("creating a new Headless Service %s for YBMasters in namespace %s", masterHeadlessService.Name, masterHeadlessService.Namespace)
-		err = r.Create(context.TODO(), masterHeadlessService)
+		logger.Info("creating a new Headless Service for YBMasters", "name", masterHeadlessService.Name, "namespace", masterHeadlessService.Namespace)
+		err = r.Create(ctx, masterHeadlessService)
 		if err != nil {
 			return err
 		}
 	} else if err != nil {
 		return err
 	} else {
-		logger.Info("updating master headless service")
+		logger.Info("updating master headless service", "cluster", cluster.Name, "service", found.Name)
 		updateMasterHeadlessService(cluster, found)
-		if err := r.Update(context.TODO(), found); err != nil {
-			logger.Error(err, "failed to update master headless service object.")
+		if err := r.Update(ctx, found); err != nil {
+			logger.Error(err, "failed to update master headless service object")
 			return err
 		}
 	}
 
 	// Check if tserver headless service already exists
 	found = &corev1.Service{}
-	err = r.Get(context.TODO(), types.NamespacedName{Name: tserverNamePlural, Namespace: cluster.Namespace}, found)
+	err = r.Get(ctx, types.NamespacedName{Name: tserverNamePlural, Namespace: cluster.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		tserverHeadlessService, err := createTServerHeadlessService(cluster)
 		if err != nil {
 			// Error creating tserver headless service object
-			logger.Error(err, "forming tserver headless service object failed.")
+			logger.Error(err, "forming tserver headless service object failed")
 			return err
 		}
 
@@ -330,19 +332,19 @@ func (r *YBClusterReconciler) reconcileHeadlessServices(cluster *yugabytecomv1al
 			return err
 		}
 
-		logger.Info("creating a new Headless Service %s for YBTServers in namespace %s", tserverHeadlessService.Name, tserverHeadlessService.Namespace)
+		logger.Info("creating a new Headless Service for YBTServers", "name", tserverHeadlessService.Name, "namespace", tserverHeadlessService.Namespace)
 
-		err = r.Create(context.TODO(), tserverHeadlessService)
+		err = r.Create(ctx, tserverHeadlessService)
 		if err != nil {
 			return err
 		}
 	} else if err != nil {
 		return err
 	} else {
-		logger.Info("updating tserver headless service")
+		logger.Info("updating tserver headless service", "cluster", cluster.Name, "service", found.Name)
 		updateTServerHeadlessService(cluster, found)
-		if err := r.Update(context.TODO(), found); err != nil {
-			logger.Error(err, "failed to update tserver headless service object.")
+		if err := r.Update(ctx, found); err != nil {
+			logger.Error(err, "failed to update tserver headless service object")
 			return err
 		}
 	}
@@ -350,15 +352,15 @@ func (r *YBClusterReconciler) reconcileHeadlessServices(cluster *yugabytecomv1al
 	return nil
 }
 
-func (r *YBClusterReconciler) reconcileUIServices(cluster *yugabytecomv1alpha1.YBCluster, logger logr.Logger) error {
+func (r *YBClusterReconciler) reconcileUIServices(ctx context.Context, cluster *yugabytecomv1alpha1.YBCluster, logger logr.Logger) error {
 	// Check if master ui service already exists
 	found := &corev1.Service{}
-	err := r.Get(context.TODO(), types.NamespacedName{Name: masterUIServiceName, Namespace: cluster.Namespace}, found)
+	err := r.Get(ctx, types.NamespacedName{Name: masterUIServiceName, Namespace: cluster.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		masterUIService, err := createMasterUIService(cluster)
 		if err != nil {
 			// Error creating master ui service object
-			logger.Error(err, "forming master ui service object failed.")
+			logger.Error(err, "forming master ui service object failed")
 			return err
 		}
 
@@ -367,31 +369,31 @@ func (r *YBClusterReconciler) reconcileUIServices(cluster *yugabytecomv1alpha1.Y
 			return err
 		}
 
-		logger.Info("creating a new UI Service %s for YBMasters in namespace %s", masterUIService.Name, masterUIService.Namespace)
-		err = r.Create(context.TODO(), masterUIService)
+		logger.Info("creating a new UI Service for YBMasters", "name", masterUIService.Name, "namespace", masterUIService.Namespace)
+		err = r.Create(ctx, masterUIService)
 		if err != nil {
 			return err
 		}
 	} else if err != nil {
 		return err
 	} else {
-		logger.Info("updating master ui service")
+		logger.Info("updating master ui service", "cluster", cluster.Name, "service", found.Name)
 		updateMasterUIService(cluster, found)
-		if err := r.Update(context.TODO(), found); err != nil {
-			logger.Error(err, "failed to update master ui service object.")
+		if err := r.Update(ctx, found); err != nil {
+			logger.Error(err, "failed to update master ui service object")
 			return err
 		}
 	}
 
 	// Check if tserver ui service already exists
 	found = &corev1.Service{}
-	err = r.Get(context.TODO(), types.NamespacedName{Name: tserverUIServiceName, Namespace: cluster.Namespace}, found)
+	err = r.Get(ctx, types.NamespacedName{Name: tserverUIServiceName, Namespace: cluster.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) && cluster.Spec.Tserver.TserverUIPort > 0 {
 		// Create TServer ui service, if it didn't existed.
 		tserverUIService, err := createTServerUIService(cluster)
 		if err != nil {
 			// Error creating tserver ui service object
-			logger.Error(err, "forming tserver UI Service object failed.")
+			logger.Error(err, "forming tserver UI Service object failed")
 			return err
 		}
 
@@ -400,25 +402,25 @@ func (r *YBClusterReconciler) reconcileUIServices(cluster *yugabytecomv1alpha1.Y
 			return err
 		}
 
-		logger.Info("creating a new ui service %s for YBTServers in namespace %s", tserverUIService.Name, tserverUIService.Namespace)
+		logger.Info("creating a new ui service for YBTServers", "name", tserverUIService.Name, "namespace", tserverUIService.Namespace)
 
-		err = r.Create(context.TODO(), tserverUIService)
+		err = r.Create(ctx, tserverUIService)
 		if err != nil {
 			return err
 		}
 	} else if err == nil && cluster.Spec.Tserver.TserverUIPort <= 0 {
 		// Delete the service if it existed before & it is not needed going forward.
-		logger.Info("deleting tserver ui service")
-		if err := r.Delete(context.TODO(), found); err != nil {
-			logger.Error(err, "failed to delete tserver ui service object.")
+		logger.Info("deleting tserver ui service", "cluster", cluster.Name, "service", found.Name)
+		if err := r.Delete(ctx, found); err != nil {
+			logger.Error(err, "failed to delete tserver ui service object")
 			return err
 		}
 	} else if err == nil && cluster.Spec.Tserver.TserverUIPort > 0 {
 		// Update the service if it existed before & is needed in the new spec.
-		logger.Info("updating tserver ui service")
+		logger.Info("updating tserver ui service", "cluster", cluster.Name, "service", found.Name)
 		updateTServerUIService(cluster, found)
-		if err := r.Update(context.TODO(), found); err != nil {
-			logger.Error(err, "failed to update tserver ui service object.")
+		if err := r.Update(ctx, found); err != nil {
+			logger.Error(err, "failed to update tserver ui service object")
 			return err
 		}
 	} else if err != nil && !errors.IsNotFound(err) {
@@ -428,119 +430,119 @@ func (r *YBClusterReconciler) reconcileUIServices(cluster *yugabytecomv1alpha1.Y
 	return nil
 }
 
-func (r *YBClusterReconciler) reconcileStatefulsets(cluster *yugabytecomv1alpha1.YBCluster, logger logr.Logger) (reconcile.Result, error) {
-	result := reconcile.Result{}
+func (r *YBClusterReconciler) reconcileStatefulsets(ctx context.Context, cluster *yugabytecomv1alpha1.YBCluster, logger logr.Logger) error {
+	// result := reconcile.Result{}
 	// Check if master statefulset already exists
 	found := &appsv1.StatefulSet{}
-	err := r.Get(context.TODO(), types.NamespacedName{Name: masterName, Namespace: cluster.Namespace}, found)
+	err := r.Get(ctx, types.NamespacedName{Name: masterName, Namespace: cluster.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		masterStatefulset, err := createMasterStatefulset(cluster)
 		if err != nil {
 			// Error creating master statefulset object
-			logger.Error(err, "forming master statefulset object failed.")
-			return result, err
+			logger.Error(err, "forming master statefulset object failed")
+			return err
 		}
 
 		// Set YBCluster instance as the owner and controller for master statefulset
 		if err := controllerutil.SetControllerReference(cluster, masterStatefulset, r.Scheme); err != nil {
-			return result, err
+			return err
 		}
-		logger.Info("creating a new Statefulset %s for YBMasters in namespace %s", masterStatefulset.Name, masterStatefulset.Namespace)
-		err = r.Create(context.TODO(), masterStatefulset)
+		logger.Info("creating a new Statefulset for YBMasters", "name", masterStatefulset.Name, "namespace", masterStatefulset.Namespace)
+		err = r.Create(ctx, masterStatefulset)
 		if err != nil {
-			return result, err
+			return err
 		}
 	} else if err != nil {
-		return result, err
+		return err
 	} else {
-		logger.Info("updating master statefulset")
+		logger.Info("updating master statefulset", "cluster", cluster.Name, "service", found.Name)
 		updateMasterStatefulset(cluster, found)
-		if err := r.Update(context.TODO(), found); err != nil {
-			logger.Error(err, "failed to update master statefulset object.")
-			return result, err
+		if err := r.Update(ctx, found); err != nil {
+			logger.Error(err, "failed to update master statefulset object")
+			return err
 		}
 	}
 
 	tserverStatefulset, err := createTServerStatefulset(cluster)
 	if err != nil {
 		// Error creating tserver statefulset object
-		logger.Error(err, "forming tserver statefulset object failed.")
-		return result, err
+		logger.Error(err, "forming tserver statefulset object failed")
+		return err
 	}
 
 	// Set YBCluster instance as the owner and controller for tserver statefulset
 	if err := controllerutil.SetControllerReference(cluster, tserverStatefulset, r.Scheme); err != nil {
-		return result, err
+		return err
 	}
 
 	// Check if tserver statefulset already exists
 	found = &appsv1.StatefulSet{}
-	err = r.Get(context.TODO(), types.NamespacedName{Name: tserverStatefulset.Name, Namespace: tserverStatefulset.Namespace}, found)
+	err = r.Get(ctx, types.NamespacedName{Name: tserverStatefulset.Name, Namespace: tserverStatefulset.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		logger.Info("creating a new Statefulset %s for YBTServers in namespace %s", tserverStatefulset.Name, tserverStatefulset.Namespace)
+		logger.Info("creating a new Statefulset for YBTServers", "name", tserverStatefulset.Name, "namespace", tserverStatefulset.Namespace)
 
-		err = r.Create(context.TODO(), tserverStatefulset)
+		err = r.Create(ctx, tserverStatefulset)
 		if err != nil {
-			return result, err
+			return err
 		}
 	} else if err != nil {
-		return result, err
+		return err
 	} else {
 		// Don't requeue if TServer replica count is less than
 		// cluster replication factor
 		if cluster.Spec.Tserver.Replicas < cluster.Spec.ReplicationFactor {
-			logger.Error(nil, "TServer replica count cannot be less than the replication factor of the cluster: '%d' < '%d'.", cluster.Spec.Tserver.Replicas, cluster.Spec.ReplicationFactor)
-			return result, nil
+			logger.Error(nil, "TServer replica count cannot be less than the replication factor of the cluster", "ReplicaCount", cluster.Spec.Tserver.Replicas, "ReplicationFactor", cluster.Spec.ReplicationFactor)
+			return nil
 		}
 
 		allowStsUpdate, err := r.scaleTServers(*found.Spec.Replicas, cluster, logger)
 		if err != nil {
-			return result, err
+			return err
 		}
 
 		if allowStsUpdate {
-			logger.Info("updating tserver statefulset")
+			logger.Info("updating tserver statefulset", "cluster", cluster.Name, "service", found.Name)
 			updateTServerStatefulset(cluster, found)
-			if err := r.Update(context.TODO(), found); err != nil {
-				logger.Error(err, "failed to update tserver statefulset object.")
-				return result, err
+			if err := r.Update(ctx, found); err != nil {
+				logger.Error(err, "failed to update tserver statefulset object")
+				return err
 			}
 
 			for _, condition := range cluster.Status.Conditions {
 				if condition.Type == scalingDownTServersCondition {
 					msg := "Scaled down TServers successfully"
-					logger.Info("creating event, type: %s, reason: %s, message: %s",
-						corev1.EventTypeNormal, scaledDownTServersEventReason, msg)
-					r.recorder.Event(cluster, corev1.EventTypeNormal, scaledDownTServersEventReason, msg)
+					logger.Info("creating event", "type", corev1.EventTypeNormal, "reason", scaledDownTServersEventReason, "message", msg)
+					// TODO: causing invalid memory pointer
+					// r.recorder.Event(cluster, corev1.EventTypeNormal, scaledDownTServersEventReason, msg)
 				}
 			}
 
 			// Update the Status after updating the STS
 			tserverScaleCond := yugabytecomv1alpha1.YBClusterCondition{
-				Type:    scalingDownTServersCondition,
-				Status:  corev1.ConditionFalse,
-				Reason:  noScaleDownInProgress,
-				Message: noScaleDownInProgressMsg,
+				Type:               scalingDownTServersCondition,
+				Status:             corev1.ConditionFalse,
+				Reason:             noScaleDownInProgress,
+				Message:            noScaleDownInProgressMsg,
+				LastTransitionTime: metav1.NewTime(time.Now()),
 			}
 			logger.Info("updating Status condition", "Type", tserverScaleCond.Type, "Status", tserverScaleCond.Status)
 			cluster.Status.Conditions = append(cluster.Status.Conditions, tserverScaleCond)
-			if err := r.Status().Update(context.TODO(), cluster); err != nil {
-				return result, err
+			if err := r.Status().Update(ctx, cluster); err != nil {
+				return err
 			}
 		} else {
 			msg := fmt.Sprintf("Scaling down TServers to %d: waiting for data move to complete",
 				cluster.Status.TargetedTServerReplicas)
-			logger.Info("creating event, type: %s, reason: %s, message: %s",
-				corev1.EventTypeWarning, scalingDownTServersEventReason, msg)
+			logger.Info("creating event", "type", corev1.EventTypeWarning, "reason", scalingDownTServersEventReason, "message", msg)
 			r.recorder.Event(cluster, corev1.EventTypeWarning, scalingDownTServersEventReason, msg)
 
 			// Requeue with exponential back-off
-			result.Requeue = true
-			return result, nil
+			// result.Requeue = true
+			return nil
 		}
 	}
 
-	return result, nil
+	return nil
 }
 
 func validateCR(spec *yugabytecomv1alpha1.YBClusterSpec) error {
@@ -856,5 +858,7 @@ func createListOfVolumeMountPaths(storageCount int32) string {
 func (r *YBClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&yugabytecomv1alpha1.YBCluster{}).
+		Owns(&appsv1.StatefulSet{}).
+		Owns(&corev1.Pod{}).
 		Complete(r)
 }

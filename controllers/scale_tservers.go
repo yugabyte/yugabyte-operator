@@ -66,7 +66,7 @@ func (r *YBClusterReconciler) scaleTServers(currentReplicas int32, cluster *yuga
 	scaleDownBy := currentReplicas - cluster.Status.TargetedTServerReplicas
 
 	if scaleDownBy > 0 {
-		logger.Info("scaling down TServer replicas by %d.", scaleDownBy)
+		logger.Info("scaling down TServer", "replicas", scaleDownBy)
 
 		tserverScaleCond := yugabytecomv1alpha1.YBClusterCondition{
 			Type:    scalingDownTServersCondition,
@@ -74,7 +74,7 @@ func (r *YBClusterReconciler) scaleTServers(currentReplicas int32, cluster *yuga
 			Reason:  scaleDownInProgress,
 			Message: scaleDownInProgressMsg,
 		}
-		logger.Info("updating Status condition %s: %s", tserverScaleCond.Type, tserverScaleCond.Status)
+		logger.Info("updating Status condition", "type", tserverScaleCond.Type, "status", tserverScaleCond.Status)
 		cluster.Status.Conditions = append(cluster.Status.Conditions, tserverScaleCond)
 		if err := r.Status().Update(context.TODO(), cluster); err != nil {
 			return false, err
@@ -91,7 +91,7 @@ func (r *YBClusterReconciler) scaleTServers(currentReplicas int32, cluster *yuga
 // blacklistPods adds yugabyte.com/blacklist: true annotation to the
 // TServer pods
 func (r *YBClusterReconciler) blacklistPods(cluster *yugabytecomv1alpha1.YBCluster, cnt int32, logger logr.Logger) error {
-	logger.Info("adding blacklist annotation to %d TServer pods", cnt)
+	logger.Info("adding blacklist annotation to TServer pods", "count", cnt)
 	scalingDownTo := cluster.Status.TargetedTServerReplicas
 	tserverReplicas := scalingDownTo + cnt
 	for podNum := tserverReplicas - 1; podNum >= scalingDownTo; podNum-- {
@@ -182,8 +182,8 @@ func (r *YBClusterReconciler) syncBlacklist(cluster *yugabytecomv1alpha1.YBClust
 			ybAdminGetUniverseConfigCmd,
 		})
 
-	logger.Info("running command 'yb-admin %s' in YB-Master pod: %s, command: %q", ybAdminGetUniverseConfigCmd, masterPod, getConfigCmd)
-	cout, _, err := kube.Exec(r.config, cluster.Namespace, masterPod, "", getConfigCmd, nil)
+	logger.Info("running command", "yb-admin", ybAdminGetUniverseConfigCmd, "YB-Master pod", masterPod, "command", getConfigCmd)
+	cout, _, err := kube.Exec(r.Config, cluster.Namespace, masterPod, "", getConfigCmd, nil)
 	if err != nil {
 		return err
 	}
@@ -196,7 +196,7 @@ func (r *YBClusterReconciler) syncBlacklist(cluster *yugabytecomv1alpha1.YBClust
 	}
 
 	currentBl := universeCfg.GetBlacklist()
-	logger.Info("current blacklist from YB-Master: %q", currentBl)
+	logger.Info("current blacklist from YB-Master", "blacklist", currentBl)
 
 	for _, pod := range pods.Items {
 		podHostPort := fmt.Sprintf(
@@ -211,12 +211,12 @@ func (r *YBClusterReconciler) syncBlacklist(cluster *yugabytecomv1alpha1.YBClust
 		operation := getBlacklistOperation(pod)
 		if containsString(currentBl, podHostPort) {
 			if operation == ybAdminBlacklistAddOp {
-				logger.Info("pod %s is already in YB-Master blacklist, skipping.", podHostPort)
+				logger.Info("pod is already in YB-Master blacklist, skipping.", "pod", podHostPort)
 				continue
 			}
 		} else {
 			if operation == ybAdminBlacklistRemoveOp {
-				logger.Info("pod %s is not in YB-Master blacklist, skipping.", podHostPort)
+				logger.Info("pod is not in YB-Master blacklist, skipping.", "pod", podHostPort)
 				continue
 			}
 		}
@@ -237,13 +237,13 @@ func (r *YBClusterReconciler) syncBlacklist(cluster *yugabytecomv1alpha1.YBClust
 			})
 
 		// blacklist it or remove it
-		logger.Info("running command 'yb-admin %s' in YB-Master pod: %s, command: %q", ybAdminChangeBlacklistCmd, masterPod, modBlacklistCmd)
-		_, _, err := kube.Exec(r.config, cluster.Namespace, masterPod, "", modBlacklistCmd, nil)
+		logger.Info("running command", "yb-admin", ybAdminChangeBlacklistCmd, "YB-Master pod", masterPod, "command", modBlacklistCmd)
+		_, _, err := kube.Exec(r.Config, cluster.Namespace, masterPod, "", modBlacklistCmd, nil)
 		if err != nil {
 			return err
 		}
 
-		logger.Info("modified the blacklist, pod: %s, operation: %s", pod.ObjectMeta.Name, operation)
+		logger.Info("modified the blacklist", "pod", pod.ObjectMeta.Name, "operation", operation)
 
 		// TODO(bhavin192): improve this log line
 		// logger.Info("%s %s to/from blacklist out: %s, err: %s", pod.ObjectMeta.Name, operation, cout, cerr)
@@ -294,8 +294,8 @@ func (r *YBClusterReconciler) checkDataMoveProgress(cluster *yugabytecomv1alpha1
 		},
 	)
 	masterPod := fmt.Sprintf("%s-%d", masterName, 0)
-	logger.Info("running command 'yb-admin %s' in YB-Master pod: %s, command: %q", ybAdminGetLoadMoveCompletionCmd, masterPod, cmd)
-	cout, _, err := kube.Exec(r.config, cluster.Namespace, masterPod, "", cmd, nil)
+	logger.Info("running command", "yb-admin", ybAdminGetLoadMoveCompletionCmd, "YB-Master pod", masterPod, "command", cmd)
+	cout, _, err := kube.Exec(r.Config, cluster.Namespace, masterPod, "", cmd, nil)
 	if err != nil {
 		return err
 	}
@@ -303,7 +303,7 @@ func (r *YBClusterReconciler) checkDataMoveProgress(cluster *yugabytecomv1alpha1
 	// TODO(bhavin192): improve this log line
 	// logger.Info("get_load_move_completion: out: %s, err: %s", cout, cerr)
 	p := cout[strings.Index(cout, "= ")+2 : strings.Index(cout, " :")]
-	logger.Info("current data move progress: %s", p)
+	logger.Info("current data move", "progress", p)
 
 	// Toggle the MovingData condition
 	cond := yugabytecomv1alpha1.YBClusterCondition{Type: movingDataCondition}
@@ -317,7 +317,7 @@ func (r *YBClusterReconciler) checkDataMoveProgress(cluster *yugabytecomv1alpha1
 		cond.Message = noDataMoveInProgressMsg
 	}
 
-	logger.Info("updating Status condition %s: %s", cond.Type, cond.Status)
+	logger.Info("updating Status condition", "type", cond.Type, "status", cond.Status)
 	cluster.Status.Conditions = append(cluster.Status.Conditions, cond)
 	if err := r.Status().Update(context.TODO(), cluster); err != nil {
 		return err

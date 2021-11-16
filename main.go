@@ -81,6 +81,7 @@ func main() {
 	if err = (&controllers.YBClusterReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		Config: ctrl.GetConfigOrDie(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "YBCluster")
 		os.Exit(1)
