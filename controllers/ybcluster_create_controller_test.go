@@ -1,0 +1,157 @@
+package controllers
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	yugabytecomv1alpha1 "github.com/yugabyte/yugabyte-operator/api/v1alpha1"
+)
+
+func TestCreateMasterSecret(t *testing.T) {
+	minimalCluster := yugabytecomv1alpha1.YBCluster{
+		Spec: *getMinimalClusterSpec(),
+	}
+
+	addDefaults(&minimalCluster.Spec)
+
+	secret, err := createMasterSecret(&minimalCluster)
+
+	assert.Nil(t, err, "Received error : %+v", err)
+	assert.Nil(t, secret)
+
+	minimalCluster.Spec.TLS.Enabled = true
+	minimalCluster.Spec.TLS.RootCA = yugabytecomv1alpha1.YBRootCASpec{
+		Cert: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURGRENDQWZ5Z0F3SUJBZ0lVUk9vY2RNbUxZU2YwOWRkQTBPa0VWODJtTTRVd0RRWUpLb1pJaHZjTkFRRUwKQlFBd01ERVJNQThHQTFVRUNnd0lXWFZuWVdKNWRHVXhHekFaQmdOVkJBTU1Fa05CSUdadmNpQlpkV2RoWW5sMApaU0JFUWpBZUZ3MHhPVEE1TWpNd09URXhNalphRncweE9URXdNak13T1RFeE1qWmFNREF4RVRBUEJnTlZCQW9NCkNGbDFaMkZpZVhSbE1Sc3dHUVlEVlFRRERCSkRRU0JtYjNJZ1dYVm5ZV0o1ZEdVZ1JFSXdnZ0VpTUEwR0NTcUcKU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLQW9JQkFRQ3hMd3hMeTZjYjhZdS9laFlmU3pteWVqcEw1cjZVSnFmeApWVDF5SUJWSktzNnZPR0QzRWdhSzZaVVZkODBzOGdZU3hzbG1UREh0cnNyWXhCSVMwRXJMVFFsODZVUVd5d1lsCjkvT09FYzdGUVRoWmdsZHRDQmwxNUZSSmp4TGk0LzFJUU1xaU93TDlGM0xjQ3JobXF1bVZKWXJmVGRtNnp4YXkKY0Q3ZlNISGw5Y3phYWFGUGRRa2JZaUt0V0p2cmJ1WEx2QkhleE0rL2FhaVIwY2FBTE94RkhKRlE0N2E1cWwvVQpOcld6emJuVjFZTkRGcEJmLzY2cm95WFh5L2xGMmhWWStYampudlRNL2M0bURWRHRRcDVKVXR6UGhGZ3ZhQngyClUvL2paeFBPblc5dVU4THdFeVdzeWhPNTNWcEREN3VMSHFHYnFrZWd0OVBtTmZsT1QwMlhBZ01CQUFHakpqQWsKTUE0R0ExVWREd0VCL3dRRUF3SUM1REFTQmdOVkhSTUJBZjhFQ0RBR0FRSC9BZ0VCTUEwR0NTcUdTSWIzRFFFQgpDd1VBQTRJQkFRQitXS0NlS3JiYXkwaFNMdjMreUlEWEkvaEw5TEY1N3pDUzNtRU1JTEJXcUVXbUN1R25WVXNFCktSMXA0VzBPSERXbStzTWNtbm1EcUM4U1VZMHlOM2htYnVGWWViZUs5bks0R3IzQ0VtTGk2Q3dxbzJtcWZLVHkKSk9sSU5KZDFFdW1jSlVBUEtmVGNxVkdSWlpITFlHMTVsckpyNjNMaTlYbHhqajlNNEpCejJnd2dsQ3Bqa1BxMwpSazgvYnZSbHhaNVdlNVZ1RUtTckZRNForditkSS9peFpwdjQ3UHY1TTM3bHdLRlQ5amRxbW8zbE82ODNFcEljCnF6bStrclUyb2VhZUphVUFnWlRFU296VUZGb053QzUyTjR3YWlndXo0TU5pa3ZIYWtiTEpEdW9zQTRhQTBnN0sKb2s3K2UvKzlWY0hEUllSaFN5VVhkanB2SmdyVUEyeVYKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=",
+		Key:  "LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb3dJQkFBS0NBUUVBc1M4TVM4dW5HL0dMdjNvV0gwczVzbm82UythK2xDYW44VlU5Y2lBVlNTck9yemhnCjl4SUdpdW1WRlhmTkxQSUdFc2JKWmt3eDdhN0syTVFTRXRCS3kwMEpmT2xFRnNzR0pmZnpqaEhPeFVFNFdZSlgKYlFnWmRlUlVTWThTNHVQOVNFREtvanNDL1JkeTNBcTRacXJwbFNXSzMwM1p1czhXc25BKzMwaHg1ZlhNMm1taApUM1VKRzJJaXJWaWI2MjdseTd3UjNzVFB2Mm1va2RIR2dDenNSUnlSVU9PMnVhcGYxRGExczgyNTFkV0RReGFRClgvK3VxNk1sMTh2NVJkb1ZXUGw0NDU3MHpQM09KZzFRN1VLZVNWTGN6NFJZTDJnY2RsUC80MmNUenAxdmJsUEMKOEJNbHJNb1R1ZDFhUXcrN2l4NmhtNnBIb0xmVDVqWDVUazlObHdJREFRQUJBb0lCQUJwbEd0elR1dEpEMm9Dcwp6RXpmSlBvOGtTQ3JnQ3FMMDZyMCt0RmNqQzg1TEU4WUJBSHFjb1VSSlA5c3VHa0FxUHoxRmgyaUxqSHRQeFNwCnFOT2FxZm05UVRPVmdHb3cxbnFqaEduZXAwSGxaR0taTXpMdjZQTVNENmhob3Z1ZjRTUjVXblp1ZWhTQUFNRmMKNjNtSDdvSWtkSnF0ZTBrRC9xcVlaQlZaTW5hQ053cGpsQ0dLYmZLbjlDTHpGSUxhckxiNm4zR2x6dmpRTC9nTAphd3VnNlh5WThvcTlEVjBrZkpEV0lVZFRIc1lFYXFHcGNFWkwvNWZPSlVVcTdSSzV2eWxTVmUrWFZ5OE5jZm1sCk4rQUMrcGNwVFRRR2V0SXZsZWpsT1VhUDRTU3FNckdSUVd1Zk5pSG11a1ZtWXo5bUFsN3pRQ2xyWTZEODNBOUwKQkVkMmNYa0NnWUVBMktRVmNhVDlGRFM2ZENPdHZFL2hPUDhSNVAvY21JSjFNMXhKY2hzL1IxcUdjd0RqWkZiRwp0RGFFNVNwVExidjg4d2hKb2FDbWhlbE9renFRaWIrNXNZU2tqZERVTThIUTlhWXk3aGlxT29jL3dFUlB6ZGRRCmUyelhYRHd2QWQ2VGc3OWpLV2NhOWZxcUw0azRWOVBtbHlrVjRUVDVoaHBhVkFqbi82VDZGYXNDZ1lFQTBWL1MKT0JSdzQraEIwU0JiUU1rNTcxdk1mUEdtR0dLb1BPRWRsRzBCY0RsZTF3Wk5yQ01mYVJWdUFMOFFuQ3ZOZXg2Two1UEtUN0tOeXh5Q21IOWlaQXZjeGRjbHF5aHNncHVtTDhhM0tsb1RuSU9vSHdobUVhMWxoVCtHY01QZzEvVTl4ClVqZEY2Y0tmSFFJd2FYYkNHUTVzaFhBUU0yVU5HbStYa0ZmeTQ4VUNnWUJ3d0cxOHVVOFNmaUx3b1VVaDlqMFYKQ2dRSk9IVmFWc09pMkl4TlBBc2lHdVpRNG94Mnc0Y2xjaDZXbXdHeGt0NmlxcFNQNzJuYjFrS1Q4KzRZRTFZVgpJeUQxd2xNL0lNZWRva050a2g2KzJYZC9uTTRnSnNqM2cvMU9QdkNFTzVCeENHSVd3VmZSNEFWRk9saTl0VWFWCk04ZjBienJTNWRKUFhGZEt3VlY3Z3dLQmdBak5NV1lnSGRyRzBiVjcyYm93ZTFuL2p1b1ZzbmpGOVBLU09BOGMKUWZvNHZ5N2syZkVKalBGNjhDUGg1RTNjWFlmMmNlVlgrVFh5YlFuSDZwUGVKQmlHMGJKMDVDTlkzcGVGcTlkZQpDZTBuNnh0c0d5VmlzemxjQ1lZMUlyN0FRR3pFb1N2bW5PN0Z1ckNhZmZTQkJJblBIR3JEbWpxKzNiMGx3Y1pVCm5DWk5Bb0dCQUpJYmZKSVNkbFlBalRwYnRVbVd0K2tlemNlWVdsUkxENHNOcWx2SWQ0U2JUbmEwR2FRSWRVSHIKWWU5RjhpTVgweWh1WWhzUXoraHlkZDhCVW44TXgwRVN6c2g3d0tpak5jenJpV3JUODlmYmlxVUpocFZvWUhWNwpQVExTZ1pSUDFyUU9UekpGVEkzdjMyNkg1dzFlZzJ0NUFOcnRWenFYTng4N2FOTXQwWGNQCi0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCg==",
+	}
+
+	secret, err = createMasterSecret(&minimalCluster)
+
+	assert.Nil(t, err, "Received error : %+v", err)
+	assert.NotNil(t, secret)
+	assert.Equal(t, int(minimalCluster.Spec.Master.Replicas*2+1), len(secret.Data))
+}
+
+func TestCreateTServerSecret(t *testing.T) {
+	minimalCluster := yugabytecomv1alpha1.YBCluster{
+		Spec: *getMinimalClusterSpec(),
+	}
+
+	addDefaults(&minimalCluster.Spec)
+
+	secret, err := createTServerSecret(&minimalCluster)
+
+	assert.Nil(t, err, "Received error : %+v", err)
+	assert.Nil(t, secret)
+
+	minimalCluster.Spec.TLS.Enabled = true
+	minimalCluster.Spec.TLS.RootCA = yugabytecomv1alpha1.YBRootCASpec{
+		Cert: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURGRENDQWZ5Z0F3SUJBZ0lVUk9vY2RNbUxZU2YwOWRkQTBPa0VWODJtTTRVd0RRWUpLb1pJaHZjTkFRRUwKQlFBd01ERVJNQThHQTFVRUNnd0lXWFZuWVdKNWRHVXhHekFaQmdOVkJBTU1Fa05CSUdadmNpQlpkV2RoWW5sMApaU0JFUWpBZUZ3MHhPVEE1TWpNd09URXhNalphRncweE9URXdNak13T1RFeE1qWmFNREF4RVRBUEJnTlZCQW9NCkNGbDFaMkZpZVhSbE1Sc3dHUVlEVlFRRERCSkRRU0JtYjNJZ1dYVm5ZV0o1ZEdVZ1JFSXdnZ0VpTUEwR0NTcUcKU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLQW9JQkFRQ3hMd3hMeTZjYjhZdS9laFlmU3pteWVqcEw1cjZVSnFmeApWVDF5SUJWSktzNnZPR0QzRWdhSzZaVVZkODBzOGdZU3hzbG1UREh0cnNyWXhCSVMwRXJMVFFsODZVUVd5d1lsCjkvT09FYzdGUVRoWmdsZHRDQmwxNUZSSmp4TGk0LzFJUU1xaU93TDlGM0xjQ3JobXF1bVZKWXJmVGRtNnp4YXkKY0Q3ZlNISGw5Y3phYWFGUGRRa2JZaUt0V0p2cmJ1WEx2QkhleE0rL2FhaVIwY2FBTE94RkhKRlE0N2E1cWwvVQpOcld6emJuVjFZTkRGcEJmLzY2cm95WFh5L2xGMmhWWStYampudlRNL2M0bURWRHRRcDVKVXR6UGhGZ3ZhQngyClUvL2paeFBPblc5dVU4THdFeVdzeWhPNTNWcEREN3VMSHFHYnFrZWd0OVBtTmZsT1QwMlhBZ01CQUFHakpqQWsKTUE0R0ExVWREd0VCL3dRRUF3SUM1REFTQmdOVkhSTUJBZjhFQ0RBR0FRSC9BZ0VCTUEwR0NTcUdTSWIzRFFFQgpDd1VBQTRJQkFRQitXS0NlS3JiYXkwaFNMdjMreUlEWEkvaEw5TEY1N3pDUzNtRU1JTEJXcUVXbUN1R25WVXNFCktSMXA0VzBPSERXbStzTWNtbm1EcUM4U1VZMHlOM2htYnVGWWViZUs5bks0R3IzQ0VtTGk2Q3dxbzJtcWZLVHkKSk9sSU5KZDFFdW1jSlVBUEtmVGNxVkdSWlpITFlHMTVsckpyNjNMaTlYbHhqajlNNEpCejJnd2dsQ3Bqa1BxMwpSazgvYnZSbHhaNVdlNVZ1RUtTckZRNForditkSS9peFpwdjQ3UHY1TTM3bHdLRlQ5amRxbW8zbE82ODNFcEljCnF6bStrclUyb2VhZUphVUFnWlRFU296VUZGb053QzUyTjR3YWlndXo0TU5pa3ZIYWtiTEpEdW9zQTRhQTBnN0sKb2s3K2UvKzlWY0hEUllSaFN5VVhkanB2SmdyVUEyeVYKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=",
+		Key:  "LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb3dJQkFBS0NBUUVBc1M4TVM4dW5HL0dMdjNvV0gwczVzbm82UythK2xDYW44VlU5Y2lBVlNTck9yemhnCjl4SUdpdW1WRlhmTkxQSUdFc2JKWmt3eDdhN0syTVFTRXRCS3kwMEpmT2xFRnNzR0pmZnpqaEhPeFVFNFdZSlgKYlFnWmRlUlVTWThTNHVQOVNFREtvanNDL1JkeTNBcTRacXJwbFNXSzMwM1p1czhXc25BKzMwaHg1ZlhNMm1taApUM1VKRzJJaXJWaWI2MjdseTd3UjNzVFB2Mm1va2RIR2dDenNSUnlSVU9PMnVhcGYxRGExczgyNTFkV0RReGFRClgvK3VxNk1sMTh2NVJkb1ZXUGw0NDU3MHpQM09KZzFRN1VLZVNWTGN6NFJZTDJnY2RsUC80MmNUenAxdmJsUEMKOEJNbHJNb1R1ZDFhUXcrN2l4NmhtNnBIb0xmVDVqWDVUazlObHdJREFRQUJBb0lCQUJwbEd0elR1dEpEMm9Dcwp6RXpmSlBvOGtTQ3JnQ3FMMDZyMCt0RmNqQzg1TEU4WUJBSHFjb1VSSlA5c3VHa0FxUHoxRmgyaUxqSHRQeFNwCnFOT2FxZm05UVRPVmdHb3cxbnFqaEduZXAwSGxaR0taTXpMdjZQTVNENmhob3Z1ZjRTUjVXblp1ZWhTQUFNRmMKNjNtSDdvSWtkSnF0ZTBrRC9xcVlaQlZaTW5hQ053cGpsQ0dLYmZLbjlDTHpGSUxhckxiNm4zR2x6dmpRTC9nTAphd3VnNlh5WThvcTlEVjBrZkpEV0lVZFRIc1lFYXFHcGNFWkwvNWZPSlVVcTdSSzV2eWxTVmUrWFZ5OE5jZm1sCk4rQUMrcGNwVFRRR2V0SXZsZWpsT1VhUDRTU3FNckdSUVd1Zk5pSG11a1ZtWXo5bUFsN3pRQ2xyWTZEODNBOUwKQkVkMmNYa0NnWUVBMktRVmNhVDlGRFM2ZENPdHZFL2hPUDhSNVAvY21JSjFNMXhKY2hzL1IxcUdjd0RqWkZiRwp0RGFFNVNwVExidjg4d2hKb2FDbWhlbE9renFRaWIrNXNZU2tqZERVTThIUTlhWXk3aGlxT29jL3dFUlB6ZGRRCmUyelhYRHd2QWQ2VGc3OWpLV2NhOWZxcUw0azRWOVBtbHlrVjRUVDVoaHBhVkFqbi82VDZGYXNDZ1lFQTBWL1MKT0JSdzQraEIwU0JiUU1rNTcxdk1mUEdtR0dLb1BPRWRsRzBCY0RsZTF3Wk5yQ01mYVJWdUFMOFFuQ3ZOZXg2Two1UEtUN0tOeXh5Q21IOWlaQXZjeGRjbHF5aHNncHVtTDhhM0tsb1RuSU9vSHdobUVhMWxoVCtHY01QZzEvVTl4ClVqZEY2Y0tmSFFJd2FYYkNHUTVzaFhBUU0yVU5HbStYa0ZmeTQ4VUNnWUJ3d0cxOHVVOFNmaUx3b1VVaDlqMFYKQ2dRSk9IVmFWc09pMkl4TlBBc2lHdVpRNG94Mnc0Y2xjaDZXbXdHeGt0NmlxcFNQNzJuYjFrS1Q4KzRZRTFZVgpJeUQxd2xNL0lNZWRva050a2g2KzJYZC9uTTRnSnNqM2cvMU9QdkNFTzVCeENHSVd3VmZSNEFWRk9saTl0VWFWCk04ZjBienJTNWRKUFhGZEt3VlY3Z3dLQmdBak5NV1lnSGRyRzBiVjcyYm93ZTFuL2p1b1ZzbmpGOVBLU09BOGMKUWZvNHZ5N2syZkVKalBGNjhDUGg1RTNjWFlmMmNlVlgrVFh5YlFuSDZwUGVKQmlHMGJKMDVDTlkzcGVGcTlkZQpDZTBuNnh0c0d5VmlzemxjQ1lZMUlyN0FRR3pFb1N2bW5PN0Z1ckNhZmZTQkJJblBIR3JEbWpxKzNiMGx3Y1pVCm5DWk5Bb0dCQUpJYmZKSVNkbFlBalRwYnRVbVd0K2tlemNlWVdsUkxENHNOcWx2SWQ0U2JUbmEwR2FRSWRVSHIKWWU5RjhpTVgweWh1WWhzUXoraHlkZDhCVW44TXgwRVN6c2g3d0tpak5jenJpV3JUODlmYmlxVUpocFZvWUhWNwpQVExTZ1pSUDFyUU9UekpGVEkzdjMyNkg1dzFlZzJ0NUFOcnRWenFYTng4N2FOTXQwWGNQCi0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCg==",
+	}
+
+	secret, err = createTServerSecret(&minimalCluster)
+
+	assert.Nil(t, err, "Received error : %+v", err)
+	assert.NotNil(t, secret)
+	assert.Equal(t, int(minimalCluster.Spec.Tserver.Replicas*2+1), len(secret.Data))
+}
+
+func TestCreateMasterHeadlessService(t *testing.T) {
+	minimalCluster := yugabytecomv1alpha1.YBCluster{
+		Spec: *getMinimalClusterSpec(),
+	}
+
+	addDefaults(&minimalCluster.Spec)
+
+	service, err := createMasterHeadlessService(&minimalCluster)
+
+	assert.Nil(t, err)
+	assert.Equal(t, masterNamePlural, service.Name)
+	assert.Equal(t, "None", service.Spec.ClusterIP)
+	assert.Equal(t, 2, len(service.Spec.Ports))
+	assert.Equal(t, masterUIPortDefault, service.Spec.Ports[0].Port)
+	assert.Equal(t, masterRPCPortDefault, service.Spec.Ports[1].Port)
+}
+
+func TestCreateTServerHeadlessService(t *testing.T) {
+	minimalCluster := yugabytecomv1alpha1.YBCluster{
+		Spec: *getMinimalClusterSpec(),
+	}
+
+	addDefaults(&minimalCluster.Spec)
+
+	service, err := createTServerHeadlessService(&minimalCluster)
+
+	assert.Nil(t, err)
+	assert.Equal(t, tserverNamePlural, service.Name)
+	assert.Equal(t, "None", service.Spec.ClusterIP)
+	assert.Equal(t, 4, len(service.Spec.Ports))
+	assert.Equal(t, tserverRPCPortDefault, service.Spec.Ports[0].Port)
+	assert.Equal(t, ycqlPortDefault, service.Spec.Ports[1].Port)
+	assert.Equal(t, yedisPortDefault, service.Spec.Ports[2].Port)
+	assert.Equal(t, ysqlPortDefault, service.Spec.Ports[3].Port)
+}
+
+func TestCreateMasterUIService(t *testing.T) {
+	minimalCluster := yugabytecomv1alpha1.YBCluster{
+		Spec: *getMinimalClusterSpec(),
+	}
+
+	addDefaults(&minimalCluster.Spec)
+
+	service, err := createMasterUIService(&minimalCluster)
+
+	assert.Nil(t, err)
+	assert.Equal(t, masterUIServiceName, service.Name)
+	assert.Equal(t, "", service.Spec.ClusterIP)
+	assert.Equal(t, 1, len(service.Spec.Ports))
+	assert.Equal(t, masterUIPortDefault, service.Spec.Ports[0].Port)
+}
+
+func TestCreateTServerUIService(t *testing.T) {
+	minimalCluster := yugabytecomv1alpha1.YBCluster{
+		Spec: *getMinimalClusterSpec(),
+	}
+
+	addDefaults(&minimalCluster.Spec)
+
+	service, err := createTServerUIService(&minimalCluster)
+
+	assert.Nil(t, err)
+	assert.Nil(t, service)
+}
+
+func TestCreateMasterStatefulset(t *testing.T) {
+	minimalCluster := yugabytecomv1alpha1.YBCluster{
+		Spec: *getMinimalClusterSpec(),
+	}
+
+	minimalCluster.Spec.Master.Storage.Count = 2
+	addDefaults(&minimalCluster.Spec)
+
+	sfs, err := createMasterStatefulset(&minimalCluster)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, sfs)
+	assert.Equal(t, masterName, sfs.Name)
+	assert.Equal(t, minimalCluster.Spec.Master.Replicas, *sfs.Spec.Replicas)
+	assert.Equal(t, int(minimalCluster.Spec.Master.Storage.Count), len(sfs.Spec.VolumeClaimTemplates))
+}
+
+func TestCreateTServerStatefulset(t *testing.T) {
+	minimalCluster := yugabytecomv1alpha1.YBCluster{
+		Spec: *getMinimalClusterSpec(),
+	}
+
+	minimalCluster.Spec.Tserver.Storage.Count = 3
+	addDefaults(&minimalCluster.Spec)
+
+	sfs, err := createTServerStatefulset(&minimalCluster)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, sfs)
+	assert.Equal(t, tserverName, sfs.Name)
+	assert.Equal(t, minimalCluster.Spec.Tserver.Replicas, *sfs.Spec.Replicas)
+	assert.Equal(t, int(minimalCluster.Spec.Tserver.Storage.Count), len(sfs.Spec.VolumeClaimTemplates))
+}

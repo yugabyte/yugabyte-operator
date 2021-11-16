@@ -1,0 +1,6 @@
+apiVersion: yugabyte.com/v1alpha1
+kind: YBCluster
+metadata:
+  name: ybcluster-sample
+spec:
+  # Add fields here
