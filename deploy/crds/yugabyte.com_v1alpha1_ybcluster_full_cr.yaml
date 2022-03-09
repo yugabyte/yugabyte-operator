@@ -6,7 +6,7 @@ metadata:
 spec:
   image:
     repository: yugabytedb/yugabyte
-    tag: 2.12.1.0-b41
+    tag: 2.13.0.0-b42
     pullPolicy: IfNotPresent
 
   replicationFactor: 3
