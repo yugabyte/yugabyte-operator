@@ -5,7 +5,7 @@ from re import match
 from requests import request
 from sys import exit
 
-REGISTRY_TAGS_URL = "https://registry.hub.docker.com/v1/repositories/yugabytedb/yugabyte/tags"
+REGISTRY_TAGS_URL = "https://registry.hub.docker.com/v2/repositories/yugabytedb/yugabyte/tags"
 
 
 def main(release):
@@ -19,7 +19,7 @@ def main(release):
     json_response = response.json()
 
     tags = dict()
-    for tag_obj in json_response:
+    for tag_obj in json_response['results']:
         tag = tag_obj['name']
         if tag.startswith(release.version):
             build_number = int(tag[tag.rindex("-b")+2:])
