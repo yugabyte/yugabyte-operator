@@ -111,8 +111,6 @@ spec:
         - name: yugabyte-operator
           # Replace this with the built image name
           image: quay.io/yugabyte/yugabytedb-operator
-          command:
-            - yugabyte-operator
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
