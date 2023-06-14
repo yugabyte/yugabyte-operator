@@ -1,3 +1,5 @@
+**NOTE**: This repository contains code and example Custom Resources for the Kubernetes Operator (legacy) for YugabyteDB v0.0.1. This operator is no longer maintained. We recommend using the actively maintained [helm charts for YugabyteDB](https://docs.yugabyte.com/preview/deploy/kubernetes/single-zone/oss/helm-chart/) to install yugabyte on Kubernetes.
+
 # YugabyteDB Kubernetes Operator
 
 Deploy and manage YugabyteDB cluster as a kubernetes native custom resource viz. `ybclusters.yugabyte.com`.
