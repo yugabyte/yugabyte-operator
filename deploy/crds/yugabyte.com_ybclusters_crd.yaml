@@ -214,7 +214,6 @@ spec:
                   type: integer
                 tserverUIPort:
                   format: int32
-                  minimum: 1
                   type: integer
                 ycqlPort:
                   format: int32
