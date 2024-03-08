@@ -8,7 +8,7 @@ jobs:
     if: github.event.client_payload.prerelease == 'false'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: "Configure git"
       run: |
         git config user.name 'YugaByte CI'
@@ -29,7 +29,7 @@ jobs:
           exit 1
         fi
         echo "Extracted the version number '${version_number}'."
-        echo "::set-output name=yb_version::${version_number}"
+        echo "yb_version=${version_number}" >> "$GITHUB_ENV"
     - name: "Print Python version and install dependencies"
       run: |
         python3 --version
@@ -37,14 +37,14 @@ jobs:
     - name: "Update the version"
       id: update-version
       run: |
-        .ci/update_version.sh '${{steps.extract-version.outputs.yb_version}}'
+        .ci/update_version.sh "${yb_version}"
     - name: "Push the changes"
       run: |
         git status
         git diff
         git add "pkg/controller/ybcluster/ybcluster_controller.go" \
           "deploy/crds/yugabyte.com_v1alpha1_ybcluster_full_cr.yaml"
-        git commit -m "Update the version to ${{steps.extract-version.outputs.yb_version}}"
+        git commit -m "Update the version to ${yb_version}"
         git push origin ${{ github.ref }}
     - name: "Show git status in case of failure"
       if: failure() && steps.update-version.outcome == 'failure'
