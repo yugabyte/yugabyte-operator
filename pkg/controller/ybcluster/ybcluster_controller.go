@@ -65,9 +65,9 @@ const (
 	envPodIPVal                 = "status.podIP"
 	envPodName                  = "POD_NAME"
 	envPodNameVal               = "metadata.name"
-	yugabyteDBImageName         = "yugabytedb/yugabyte:2024.2.3.3-b4"
+	yugabyteDBImageName         = "yugabytedb/yugabyte:2025.2.2.1-b1"
 	imageRepositoryDefault      = "yugabytedb/yugabyte"
-	imageTagDefault             = "2024.2.3.3-b4"
+	imageTagDefault             = "2025.2.2.1-b1"
 	imagePullPolicyDefault      = corev1.PullIfNotPresent
 	podManagementPolicyDefault  = appsv1.ParallelPodManagement
 	storageCountDefault         = int32(1)
